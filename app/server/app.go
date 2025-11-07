@@ -128,9 +128,9 @@ func NewGRPCServer(listener net.Listener, server *grpc.Server, services *Service
 	}
 }
 func (gs *GRPCServer) ListenAndServe() error {
-	//logger := logging.GetLogger()
-	//loggerSugar := logger.Sugar()
-	//loggerSugar.Infof("Listening on %s", gs.listener.Addr())
+	logger := logging.GetLogger()
+	loggerSugar := logger.Sugar()
+	loggerSugar.Infof("Listening on %s", gs.listener.Addr())
 	return gs.Serve(gs.listener)
 }
 
