@@ -7,11 +7,12 @@
 package pb
 
 import (
+	reflect "reflect"
+	unsafe "unsafe"
+
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	_ "google.golang.org/protobuf/types/gofeaturespb"
-	reflect "reflect"
-	unsafe "unsafe"
 )
 
 const (
@@ -133,13 +134,12 @@ func (b0 User_builder) Build() *User {
 }
 
 type UserResponse struct {
-	state                    protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Token         *string                `protobuf:"bytes,1,opt,name=token"`
-	xxx_hidden_EncryptedSalt []byte                 `protobuf:"bytes,2,opt,name=encrypted_salt,json=encryptedSalt"`
-	XXX_raceDetectHookData   protoimpl.RaceDetectHookData
-	XXX_presence             [1]uint32
-	unknownFields            protoimpl.UnknownFields
-	sizeCache                protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Token       *string                `protobuf:"bytes,1,opt,name=token"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *UserResponse) Reset() {
@@ -177,24 +177,9 @@ func (x *UserResponse) GetToken() string {
 	return ""
 }
 
-func (x *UserResponse) GetEncryptedSalt() []byte {
-	if x != nil {
-		return x.xxx_hidden_EncryptedSalt
-	}
-	return nil
-}
-
 func (x *UserResponse) SetToken(v string) {
 	x.xxx_hidden_Token = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
-}
-
-func (x *UserResponse) SetEncryptedSalt(v []byte) {
-	if v == nil {
-		v = []byte{}
-	}
-	x.xxx_hidden_EncryptedSalt = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
 func (x *UserResponse) HasToken() bool {
@@ -204,28 +189,15 @@ func (x *UserResponse) HasToken() bool {
 	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
-func (x *UserResponse) HasEncryptedSalt() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
 func (x *UserResponse) ClearToken() {
 	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
 	x.xxx_hidden_Token = nil
 }
 
-func (x *UserResponse) ClearEncryptedSalt() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_EncryptedSalt = nil
-}
-
 type UserResponse_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Token         *string
-	EncryptedSalt []byte
+	Token *string
 }
 
 func (b0 UserResponse_builder) Build() *UserResponse {
@@ -233,12 +205,8 @@ func (b0 UserResponse_builder) Build() *UserResponse {
 	b, x := &b0, m0
 	_, _ = b, x
 	if b.Token != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
 		x.xxx_hidden_Token = b.Token
-	}
-	if b.EncryptedSalt != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_EncryptedSalt = b.EncryptedSalt
 	}
 	return m0
 }
@@ -250,10 +218,9 @@ const file_app_api_proto_user_proto_rawDesc = "" +
 	"\x18app/api/proto/user.proto\x12\x02go\x1a!google/protobuf/go_features.proto\"8\n" +
 	"\x04User\x12\x14\n" +
 	"\x05login\x18\x01 \x01(\tR\x05login\x12\x1a\n" +
-	"\bpassword\x18\x02 \x01(\tR\bpassword\"K\n" +
+	"\bpassword\x18\x02 \x01(\tR\bpassword\"$\n" +
 	"\fUserResponse\x12\x14\n" +
-	"\x05token\x18\x01 \x01(\tR\x05token\x12%\n" +
-	"\x0eencrypted_salt\x18\x02 \x01(\fR\rencryptedSalt2T\n" +
+	"\x05token\x18\x01 \x01(\tR\x05token2T\n" +
 	"\x05Users\x12#\n" +
 	"\x05Login\x12\b.go.User\x1a\x10.go.UserResponse\x12&\n" +
 	"\bRegister\x12\b.go.User\x1a\x10.go.UserResponseB\rZ\x03/pb\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"

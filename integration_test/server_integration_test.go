@@ -2,37 +2,37 @@ package integration_test
 
 import (
 	"context"
+	"crypto/rand"
 	"fmt"
+	server2 "github.com/DimKa163/keeper/app/server"
+	"github.com/beevik/guid"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
+	"testing"
+	"time"
+
 	"github.com/DimKa163/keeper/internal/server/domain"
-	"github.com/DimKa163/keeper/internal/server/interfaces"
 	"github.com/DimKa163/keeper/internal/server/interfaces/pb"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	"net"
-	"testing"
-	"time"
 
-	"github.com/DimKa163/keeper/internal/server/domain/auth"
-	"github.com/DimKa163/keeper/internal/server/infrastructure/persistence"
-	"github.com/DimKa163/keeper/internal/server/infrastructure/security"
-	"github.com/DimKa163/keeper/internal/server/usecase"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 )
 
 func TestUserService_Register(t *testing.T) {
 	ctx := context.Background()
-	container, server, serv, err := run(ctx, t, func(s *services) error {
+	container, serv, err := run(ctx, t, func(s *services) error {
 		return nil
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer container.Terminate(ctx)
-	defer server.Stop()
-	defer serv.Pool.Close()
+	defer serv.DBPool.Close()
+	defer serv.Shutdown(ctx)
 
 	client := serv.UsersClient
 
@@ -46,7 +46,6 @@ func TestUserService_Register(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, resp)
 	assert.True(t, resp.HasToken())
-	assert.True(t, resp.HasEncryptedSalt())
 }
 
 func TestUserService_Login(t *testing.T) {
@@ -55,23 +54,23 @@ func TestUserService_Login(t *testing.T) {
 	login := "dima"
 	password := "123"
 
-	container, server, serv, err := run(ctx, t, func(s *services) error {
+	container, serv, err := run(ctx, t, func(s *services) error {
+		t.Log("generate data")
 		pwd, salt, err := s.AuthService.GenerateHash([]byte(password))
 		if err != nil {
 			return err
 		}
-		encSalt, err := s.AuthService.GenerateSalt()
 		if err != nil {
 			return err
 		}
-		return s.Uow.UserRepository().Insert(ctx, domain.NewUser(login, pwd, salt, encSalt))
+		return s.UnitOfWork.UserRepository().Insert(ctx, domain.NewUser(login, pwd, salt))
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer container.Terminate(ctx)
-	defer server.Stop()
-	defer serv.Pool.Close()
+	defer serv.DBPool.Close()
+	defer serv.Shutdown(ctx)
 
 	client := serv.UsersClient
 
@@ -85,10 +84,47 @@ func TestUserService_Login(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, resp)
 	assert.True(t, resp.HasToken())
-	assert.True(t, resp.HasEncryptedSalt())
 }
 
-func run(ctx context.Context, t *testing.T, beforeFn func(pool *services) error) (testcontainers.Container, *grpc.Server, *services, error) {
+func TestDataService_Upload(t *testing.T) {
+	ctx := context.Background()
+	container, serv, err := run(ctx, t, func(s *services) error {
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer container.Terminate(ctx)
+	defer serv.DBPool.Close()
+	defer serv.Shutdown(ctx)
+
+	client := serv.DataClient
+	id := *guid.New()
+	dek, dekNonce := make([]byte, 32), make([]byte, 16)
+	_, _ = rand.Read(dek)
+	_, _ = rand.Read(dekNonce)
+	dt, dtNonce := make([]byte, 4026), make([]byte, 16)
+	_, _ = rand.Read(dt)
+	_, _ = rand.Read(dtNonce)
+	req := pb.UploadRequest{}
+	data := pb.Data{}
+	data.SetId(id.String())
+	data.SetName("login/pass")
+	data.SetData(dt)
+	data.SetDataNonce(dtNonce)
+	data.SetDek(dek)
+	data.SetDekNonce(dekNonce)
+	data.SetLarge(false)
+	data.SetType(pb.Data_LoginPass)
+	data.SetVersion(1)
+	req.SetData(&data)
+	resp, err := client.Upload(ctx, &req)
+	assert.NoError(t, err)
+	assert.NotNil(t, resp)
+
+}
+
+func run(ctx context.Context, t *testing.T, beforeFn func(pool *services) error) (testcontainers.Container, *services, error) {
 	dbName := "keeperDb"
 	req := testcontainers.ContainerRequest{
 		Image:        "postgres:latest",
@@ -106,80 +142,142 @@ func run(ctx context.Context, t *testing.T, beforeFn func(pool *services) error)
 		ContainerRequest: req,
 		Started:          true,
 	})
+	if err != nil {
+		return nil, nil, err
+	}
 
-	if err != nil {
-		return nil, nil, nil, err
-	}
-	addr := ":3300"
-	listener, err := net.Listen("tcp", addr)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-	server := grpc.NewServer(grpc.ChainUnaryInterceptor())
 	host, _ := pgContainer.Host(ctx)
 	port, _ := pgContainer.MappedPort(ctx, "5432")
-
 	dsn := fmt.Sprintf("postgres://test:test@%s:%s/%s?sslmode=disable", host, port.Port(), dbName)
-	t.Logf("Started postgres at: %s", dsn)
+	t.Logf("started postgres at: %s", dsn)
 
-	cfg, err := pgxpool.ParseConfig(dsn)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-
-	serv := &services{}
-	serv.Pool, err = pgxpool.NewWithConfig(ctx, cfg)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-	if err := persistence.Migrate(serv.Pool, "../migrations"); err != nil {
-		return nil, nil, nil, err
-	}
-	serv.Uow = persistence.NewUnitOfWork(serv.Pool)
-
-	serv.Engine = security.NewJWTEngine(&security.JWTConfig{
-		SecretKey:       []byte("secret"),
-		TokenExpiration: 5 * time.Minute,
+	addr := ":3300"
+	srv, err := server2.NewServer(&server2.Config{
+		Addr:            addr,
+		Database:        dsn,
+		Secret:          "secret",
+		TokenExpiration: 5000,
+		SaltLength:      16,
+		Iterations:      4,
+		Parallelism:     2,
+		Memory:          64 * 1024,
+		KeyLength:       32,
 	})
-
-	serv.AuthService = auth.NewAuthService(&auth.ArgonConfig{
-		SaltLength:  16,
-		Iterations:  4,
-		Parallelism: 2,
-		Memory:      64 * 1024,
-		KeyLength:   32,
-	})
-
-	serv.UserService = usecase.NewUserService(serv.Uow, serv.AuthService, serv.Engine)
-	serv.UserServer = interfaces.NewUserServer(serv.UserService)
-	serv.UserServer.Bind(server)
+	if err != nil {
+		return nil, nil, err
+	}
+	if err := srv.AddServices(); err != nil {
+		t.Fatal(err)
+		return nil, nil, err
+	}
+	srv.Map()
+	if err := srv.AddLogging(); err != nil {
+		return nil, nil, err
+	}
+	if err := srv.MigrateFrom("../migrations"); err != nil {
+		return nil, nil, err
+	}
 	go func() {
-		if err := server.Serve(listener); err != nil {
-			t.Error("Failed to start server:", err)
-			return
-		}
+		t.Log("starting server")
+		_ = srv.Run()
 	}()
+	serv := &services{}
+	serv.Server = srv
 
+	login := "root"
+	password := "root"
+
+	if err = createRootUser(t, serv, login, password); err != nil {
+		return nil, nil, err
+	}
+
+	t.Log("configure client")
 	conn, err := grpc.NewClient(addr,
 		grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
+
 	serv.UsersClient = pb.NewUsersClient(conn)
+	serv.interceptor = newInterceptor(serv.UsersClient, login, password)
+	protectedConn, err := grpc.NewClient(addr,
+		grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithChainUnaryInterceptor(serv.interceptor.Handle()))
+	serv.DataClient = pb.NewStoredDataClient(protectedConn)
 
 	if err := beforeFn(serv); err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 
-	return pgContainer, server, serv, nil
+	return pgContainer, serv, nil
+}
+
+func createRootUser(t *testing.T, serv *services, login, pass string) error {
+	t.Log("create root user")
+	pwd, salt, err := serv.AuthService.GenerateHash([]byte(pass))
+	if err != nil {
+		return err
+	}
+	err = serv.UnitOfWork.UserRepository().Insert(context.Background(), domain.NewUser(login, pwd, salt))
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+type unaryIdentifyInterceptor struct {
+	users    pb.UsersClient
+	token    string
+	username string
+	userpass string
+}
+
+func newInterceptor(users pb.UsersClient, username, userpass string) *unaryIdentifyInterceptor {
+	return &unaryIdentifyInterceptor{
+		users:    users,
+		username: username,
+		userpass: userpass,
+	}
+}
+
+func (h *unaryIdentifyInterceptor) Handle() grpc.UnaryClientInterceptor {
+	return func(ctx context.Context, method string, req, reply any, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+		var err error
+		if h.token == "" {
+			h.token, err = h.login(ctx)
+			if err != nil {
+				return err
+			}
+		}
+		md := metadata.New(map[string]string{"authorization": fmt.Sprintf("Bearer %s", h.token)})
+		err = invoker(metadata.NewOutgoingContext(ctx, md), method, req, reply, cc, opts...)
+		if err != nil {
+			if e, ok := status.FromError(err); ok {
+				if e.Code() == codes.Unauthenticated {
+					h.token, err = h.login(ctx)
+					//md = metadata.New(map[string]string{"authorization": fmt.Sprintf("Bearer %s", h.token)})
+					//ctx = metadata.NewOutgoingContext(ctx, md)
+					err = invoker(ctx, method, req, reply, cc, opts...)
+				}
+			}
+		}
+		return err
+	}
+}
+
+func (h *unaryIdentifyInterceptor) login(ctx context.Context) (string, error) {
+	var us pb.User
+	us.SetLogin(h.username)
+	us.SetPassword(h.userpass)
+	t, err := h.users.Login(ctx, &us)
+	if err != nil {
+		return "", err
+	}
+	return t.GetToken(), nil
 }
 
 type services struct {
-	Pool        *pgxpool.Pool
-	Uow         domain.UnitOfWork
-	Engine      auth.Engine
-	AuthService auth.AuthService
-	UserService *usecase.UserService
-	UserServer  *interfaces.UsersServer
+	*server2.Server
+	interceptor *unaryIdentifyInterceptor
 	UsersClient pb.UsersClient
+	DataClient  pb.StoredDataClient
 }

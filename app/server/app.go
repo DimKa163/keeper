@@ -2,9 +2,12 @@ package server
 
 import (
 	"context"
-	"github.com/DimKa163/keeper/internal/server/interfaces"
 	"net"
+	"os/signal"
+	"syscall"
 	"time"
+
+	"github.com/DimKa163/keeper/internal/server/interfaces"
 
 	"github.com/DimKa163/keeper/internal/server/domain"
 	"github.com/DimKa163/keeper/internal/server/domain/auth"
@@ -19,11 +22,14 @@ import (
 )
 
 type ServiceContainer struct {
-	DBPool       *pgxpool.Pool
-	UnitOfWork   domain.UnitOfWork
-	AuthService  auth.AuthService
-	UserService  domain.UserService
-	UserGcServer *interfaces.UsersServer
+	DBPool              *pgxpool.Pool
+	UnitOfWork          domain.UnitOfWork
+	AuthService         auth.AuthService
+	AuthEngine          auth.Engine
+	UserService         domain.UserService
+	DataService         *usecase.DataService
+	UserRpcServer       *interfaces.UsersServer
+	StoredDataRpcServer *interfaces.DataServer
 }
 
 type Server struct {
@@ -47,15 +53,19 @@ func NewServer(config *Config) (*Server, error) {
 
 func (server *Server) AddServices() error {
 	var err error
-	server.ServerImpl = NewGRPCServer(server.listener, addGrpcServer(), server.ServiceContainer)
+
+	server.AuthEngine = addAuthEngine(server.Config)
+	server.ServerImpl = NewGRPCServer(server.listener, addGrpcServer(server.ServiceContainer), server.ServiceContainer)
 	server.DBPool, err = addPgPool(server.Database)
 	if err != nil {
 		return err
 	}
 	server.UnitOfWork = addUnitOfWork(server.DBPool)
 	server.AuthService = addAuthService(server.Config)
-	server.UserService = addUserService(server.UnitOfWork, server.AuthService, addAuthEngine(server.Config))
-	server.UserGcServer = interfaces.NewUserServer(server.UserService)
+	server.UserService = addUserService(server.UnitOfWork, server.AuthService, server.AuthEngine)
+	server.UserRpcServer = interfaces.NewUserServer(server.UserService)
+	server.DataService = usecase.NewDataService(server.UnitOfWork)
+	server.StoredDataRpcServer = interfaces.NewDataServer(server.DataService)
 	return nil
 }
 
@@ -72,6 +82,27 @@ func (server *Server) Map() {
 	server.ServerImpl.Map()
 }
 
+func (server *Server) Migrate() error {
+	return persistence.Migrate(server.DBPool, "migrations")
+}
+
+func (server *Server) MigrateFrom(path string) error {
+	return persistence.Migrate(server.DBPool, path)
+}
+
+func (server *Server) Run() error {
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+	defer cancel()
+
+	go func() {
+		<-ctx.Done()
+		timeoutCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		defer cancel()
+		_ = server.ServerImpl.Shutdown(timeoutCtx)
+	}()
+	return server.ListenAndServe()
+}
+
 func addPgPool(database string) (*pgxpool.Pool, error) {
 	pg, err := pgxpool.New(context.Background(), database)
 	if err != nil {
@@ -83,8 +114,13 @@ func addPgPool(database string) (*pgxpool.Pool, error) {
 func addUnitOfWork(pool *pgxpool.Pool) domain.UnitOfWork {
 	return persistence.NewUnitOfWork(pool)
 }
-func addGrpcServer() *grpc.Server {
-	return grpc.NewServer(grpc.ChainUnaryInterceptor())
+func addGrpcServer(container *ServiceContainer) *grpc.Server {
+	chain := make([]grpc.UnaryServerInterceptor, 0)
+	skip := make(map[string]bool)
+	skip["/go.Users/Login"] = true
+	skip["/go.Users/Register"] = true
+	chain = append(chain, interfaces.UnaryIdentifyInterceptor(container.AuthEngine, skip))
+	return grpc.NewServer(grpc.ChainUnaryInterceptor(chain...))
 }
 
 func addAuthService(config *Config) auth.AuthService {
@@ -135,7 +171,8 @@ func (gs *GRPCServer) ListenAndServe() error {
 }
 
 func (gs *GRPCServer) Map() {
-	gs.services.UserGcServer.Bind(gs.Server)
+	gs.services.UserRpcServer.Bind(gs.Server)
+	gs.services.StoredDataRpcServer.Bind(gs.Server)
 }
 
 func (gs *GRPCServer) Shutdown(ctx context.Context) error {

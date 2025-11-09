@@ -12,7 +12,7 @@ import (
 	gomock "github.com/golang/mock/gomock"
 )
 
-// MockUnitOfWork is a mock of UnitOfWork interfaces.
+// MockUnitOfWork is a mock of UnitOfWork interface.
 type MockUnitOfWork struct {
 	ctrl     *gomock.Controller
 	recorder *MockUnitOfWorkMockRecorder
@@ -33,6 +33,34 @@ func NewMockUnitOfWork(ctrl *gomock.Controller) *MockUnitOfWork {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockUnitOfWork) EXPECT() *MockUnitOfWorkMockRecorder {
 	return m.recorder
+}
+
+// FilePartRepository mocks base method.
+func (m *MockUnitOfWork) FilePartRepository() domain.FilePartRepository {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FilePartRepository")
+	ret0, _ := ret[0].(domain.FilePartRepository)
+	return ret0
+}
+
+// FilePartRepository indicates an expected call of FilePartRepository.
+func (mr *MockUnitOfWorkMockRecorder) FilePartRepository() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FilePartRepository", reflect.TypeOf((*MockUnitOfWork)(nil).FilePartRepository))
+}
+
+// StoredDataRepository mocks base method.
+func (m *MockUnitOfWork) StoredDataRepository() domain.StoredDataRepository {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "StoredDataRepository")
+	ret0, _ := ret[0].(domain.StoredDataRepository)
+	return ret0
+}
+
+// StoredDataRepository indicates an expected call of StoredDataRepository.
+func (mr *MockUnitOfWorkMockRecorder) StoredDataRepository() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StoredDataRepository", reflect.TypeOf((*MockUnitOfWork)(nil).StoredDataRepository))
 }
 
 // Tx mocks base method.

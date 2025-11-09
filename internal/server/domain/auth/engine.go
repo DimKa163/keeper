@@ -1,15 +1,17 @@
 package auth
 
-import "github.com/golang-jwt/jwt/v4"
+import (
+	"github.com/beevik/guid"
+	"github.com/golang-jwt/jwt/v4"
+)
 
 // Claims user information
 type Claims struct {
 	jwt.RegisteredClaims
-	UserID int64
 }
 
 // Engine Authentification engine
 type Engine interface {
-	GenerateToken(userID int64) (string, error)
+	GenerateToken(userID guid.Guid) (string, error)
 	ReadToken(tokenString string) (*Claims, error)
 }

@@ -19,6 +19,14 @@ func (u *UnitOfWork) UserRepository() domain.UserRepository {
 	return NewUserRepository(u.db)
 }
 
+func (u *UnitOfWork) StoredDataRepository() domain.StoredDataRepository {
+	return NewStoredDataRepository(u.db)
+}
+
+func (u *UnitOfWork) FilePartRepository() domain.FilePartRepository {
+	panic("implement me")
+}
+
 func (u *UnitOfWork) Tx(ctx context.Context, fn func(ctx context.Context, work domain.UnitOfWork) error) error {
 	var err error
 	tx, err := u.db.Begin(ctx)
