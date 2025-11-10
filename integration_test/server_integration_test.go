@@ -4,22 +4,22 @@ import (
 	"context"
 	"crypto/rand"
 	"fmt"
+	"testing"
+	"time"
+
 	server2 "github.com/DimKa163/keeper/app/server"
 	"github.com/beevik/guid"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
-	"testing"
-	"time"
 
 	"github.com/DimKa163/keeper/internal/server/domain"
 	"github.com/DimKa163/keeper/internal/server/interfaces/pb"
 	"github.com/stretchr/testify/assert"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
-
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
+	"google.golang.org/grpc"
 )
 
 func TestUserService_Register(t *testing.T) {
@@ -100,6 +100,7 @@ func TestDataService_Upload(t *testing.T) {
 
 	client := serv.DataClient
 	id := *guid.New()
+	// генерим ерунду так как серверу пофиг что там внутри
 	dek, dekNonce := make([]byte, 32), make([]byte, 16)
 	_, _ = rand.Read(dek)
 	_, _ = rand.Read(dekNonce)
@@ -149,10 +150,12 @@ func run(ctx context.Context, t *testing.T, beforeFn func(pool *services) error)
 	host, _ := pgContainer.Host(ctx)
 	port, _ := pgContainer.MappedPort(ctx, "5432")
 	dsn := fmt.Sprintf("postgres://test:test@%s:%s/%s?sslmode=disable", host, port.Port(), dbName)
-	t.Logf("started postgres at: %s", dsn)
+	t.Logf("postgres started at: %s", dsn)
 
+	serv := &services{}
 	addr := ":3300"
-	srv, err := server2.NewServer(&server2.Config{
+
+	if err = configureServer(t, serv, &server2.Config{
 		Addr:            addr,
 		Database:        dsn,
 		Secret:          "secret",
@@ -162,27 +165,9 @@ func run(ctx context.Context, t *testing.T, beforeFn func(pool *services) error)
 		Parallelism:     2,
 		Memory:          64 * 1024,
 		KeyLength:       32,
-	})
-	if err != nil {
+	}); err != nil {
 		return nil, nil, err
 	}
-	if err := srv.AddServices(); err != nil {
-		t.Fatal(err)
-		return nil, nil, err
-	}
-	srv.Map()
-	if err := srv.AddLogging(); err != nil {
-		return nil, nil, err
-	}
-	if err := srv.MigrateFrom("../migrations"); err != nil {
-		return nil, nil, err
-	}
-	go func() {
-		t.Log("starting server")
-		_ = srv.Run()
-	}()
-	serv := &services{}
-	serv.Server = srv
 
 	login := "root"
 	password := "root"
@@ -191,24 +176,40 @@ func run(ctx context.Context, t *testing.T, beforeFn func(pool *services) error)
 		return nil, nil, err
 	}
 
-	t.Log("configure client")
-	conn, err := grpc.NewClient(addr,
-		grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
+	if err = configureClient(t, serv, addr, login, password); err != nil {
 		return nil, nil, err
 	}
-
-	serv.UsersClient = pb.NewUsersClient(conn)
-	serv.interceptor = newInterceptor(serv.UsersClient, login, password)
-	protectedConn, err := grpc.NewClient(addr,
-		grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithChainUnaryInterceptor(serv.interceptor.Handle()))
-	serv.DataClient = pb.NewStoredDataClient(protectedConn)
 
 	if err := beforeFn(serv); err != nil {
 		return nil, nil, err
 	}
 
 	return pgContainer, serv, nil
+}
+
+func configureServer(t *testing.T, serv *services, config *server2.Config) error {
+	t.Logf("configure application server on %s", config.Addr)
+	srv, err := server2.NewServer(config)
+	if err != nil {
+		return err
+	}
+	if err := srv.AddServices(); err != nil {
+		t.Fatal(err)
+		return err
+	}
+	srv.Map()
+	if err := srv.AddLogging(); err != nil {
+		return err
+	}
+	if err := srv.MigrateFrom("../migrations"); err != nil {
+		return err
+	}
+	go func() {
+		t.Log("starting server")
+		_ = srv.Run()
+	}()
+	serv.Server = srv
+	return nil
 }
 
 func createRootUser(t *testing.T, serv *services, login, pass string) error {
@@ -222,6 +223,22 @@ func createRootUser(t *testing.T, serv *services, login, pass string) error {
 		return err
 	}
 	return nil
+}
+
+func configureClient(t *testing.T, serv *services, addr, login, pass string) error {
+	t.Log("configure client")
+	conn, err := grpc.NewClient(addr,
+		grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		return err
+	}
+
+	serv.UsersClient = pb.NewUsersClient(conn)
+	serv.interceptor = newInterceptor(serv.UsersClient, login, pass)
+	protectedConn, err := grpc.NewClient(addr,
+		grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithChainUnaryInterceptor(serv.interceptor.Handle()))
+	serv.DataClient = pb.NewStoredDataClient(protectedConn)
+	return err
 }
 
 type unaryIdentifyInterceptor struct {

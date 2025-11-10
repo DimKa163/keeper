@@ -2,6 +2,7 @@ package interfaces
 
 import (
 	"context"
+
 	"github.com/DimKa163/keeper/internal/server/domain/auth"
 	sh "github.com/DimKa163/keeper/internal/server/shared/auth"
 	"github.com/beevik/guid"

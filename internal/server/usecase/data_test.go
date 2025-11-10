@@ -3,14 +3,17 @@ package usecase
 import (
 	"context"
 	"crypto/rand"
+	"fmt"
+	"testing"
+	"time"
+
 	"github.com/DimKa163/keeper/internal/mocks"
 	"github.com/DimKa163/keeper/internal/server/domain"
 	"github.com/DimKa163/keeper/internal/server/infrastructure/persistence"
+	"github.com/DimKa163/keeper/internal/server/shared/auth"
 	"github.com/beevik/guid"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
-	"testing"
-	"time"
 )
 
 // TestDataService_Upload_Should_CreateDataSuccessfully просто создаем новые данные
@@ -18,7 +21,7 @@ func TestDataService_Upload_Should_CreateDataSuccessfully(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	ctx := context.Background()
-
+	ctx = auth.SetUser(ctx, *guid.New())
 	id, data, local := generateData("some pass", domain.LoginPassType)
 	uow := mocks.NewMockUnitOfWork(ctrl)
 	mockRep := mocks.NewMockStoredDataRepository(ctrl)
@@ -84,8 +87,45 @@ func TestDataService_UploadShouldBeWithConflict(t *testing.T) {
 
 	newData, err := sut.Upload(ctx, data)
 
-	assert.ErrorIs(t, err, ErrDataConflict)
+	assert.ErrorIs(t, err, domain.ErrDataConflict)
 	assert.Nil(t, newData)
+}
+
+func TestDataService_BatchUploadUpdateDataSuccessfully(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	ctx := context.Background()
+
+	index := 5
+	ids := make([]guid.Guid, index)
+	data := make([]*Data, index)
+	localData := make([]*domain.StoredData, index)
+	for i := 0; i < index; i++ {
+		id, dt, local := generateData(fmt.Sprintf("some pass %d", i+1), domain.LoginPassType)
+		ids[i] = id
+		data[i] = dt
+		localData[i] = local
+	}
+
+	uow := mocks.NewMockUnitOfWork(ctrl)
+	mockRep := mocks.NewMockStoredDataRepository(ctrl)
+	uow.EXPECT().StoredDataRepository().Return(mockRep).Times(2)
+	for i := 0; i < index; i++ {
+		mockRep.EXPECT().Get(ctx, ids[i]).Return(localData[i], nil).Times(2)
+		mockRep.EXPECT().Update(ctx, localData[i]).Return(nil)
+	}
+
+	uow.EXPECT().Tx(ctx, gomock.Any()).DoAndReturn(func(ctx context.Context, fn func(context.Context, domain.UnitOfWork) error) error {
+		return fn(ctx, uow)
+	}).Times(1)
+
+	sut := DataService{unitOfWork: uow}
+
+	newData, err := sut.BatchUpload(ctx, data)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, newData)
+
 }
 
 func generateData(name string, tt domain.StoredDataType) (id guid.Guid, data *Data, localData *domain.StoredData) {

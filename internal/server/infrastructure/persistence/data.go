@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+
 	"github.com/DimKa163/keeper/internal/server/domain"
 	"github.com/DimKa163/keeper/internal/server/shared/db"
 	"github.com/beevik/guid"
@@ -138,8 +139,7 @@ func (sdr *storedDataRepository) GetAll(ctx context.Context, userID guid.Guid, l
 		return nil, err
 	}
 	defer row.Close()
-	index := 0
-	slice := make([]*domain.StoredData, limit)
+	slice := make([]*domain.StoredData, 0, limit)
 	for row.Next() {
 		var storedData domain.StoredData
 		var id guid.Guid
@@ -166,7 +166,7 @@ func (sdr *storedDataRepository) GetAll(ctx context.Context, userID guid.Guid, l
 			&version); err != nil {
 			return nil, err
 		}
-		slice[index] = &storedData
+		slice = append(slice, &storedData)
 		storedData.ID = id
 		if createdAt.Valid {
 			storedData.CreatedAt = createdAt.Time
@@ -189,7 +189,6 @@ func (sdr *storedDataRepository) GetAll(ctx context.Context, userID guid.Guid, l
 		storedData.Dek = dek
 		storedData.DekNonce = dekNonce
 		storedData.Version = version
-		index++
 	}
 	return slice, nil
 }

@@ -3,6 +3,7 @@ package interfaces
 import (
 	"context"
 	"errors"
+
 	"github.com/DimKa163/keeper/internal/server/domain"
 	"github.com/DimKa163/keeper/internal/server/interfaces/pb"
 	"github.com/DimKa163/keeper/internal/server/usecase"
@@ -37,36 +38,99 @@ func (ds *DataServer) Upload(ctx context.Context, request *pb.UploadRequest) (*p
 	}
 	sD, err := ds.app.Upload(ctx, data)
 	if err != nil {
+		if errors.Is(err, domain.ErrDataConflict) {
+			return nil, status.Error(codes.FailedPrecondition, err.Error())
+		}
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	response.SetData(toOut(sD))
 	return &response, nil
 }
 
+func (ds *DataServer) BatchUpload(ctx context.Context, request *pb.BatchUploadRequest) (*pb.BatchUploadResponse, error) {
+	var response pb.BatchUploadResponse
+	if err := validateBatchUploadRequest(request); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	dataSlice := make([]*usecase.Data, len(request.GetData()))
+	for i, d := range request.GetData() {
+		data, err := toIn(d)
+		if err != nil {
+			return nil, status.Error(codes.InvalidArgument, err.Error())
+		}
+		dataSlice[i] = data
+	}
+
+	result, err := ds.app.BatchUpload(ctx, dataSlice)
+	if err != nil {
+		if errors.Is(err, domain.ErrDataConflict) {
+			return nil, status.Error(codes.FailedPrecondition, err.Error())
+		}
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	resp := make([]*pb.Data, len(result))
+	for i, d := range result {
+		resp[i] = toOut(d)
+	}
+	response.SetData(resp)
+	return &response, nil
+}
+
 func validateUpload(req *pb.UploadRequest) error {
 	err := make([]error, 0)
 	if !req.HasData() {
-		err = append(err, errors.New("invalid request"))
+		err = append(err, errors.New("data is required"))
 	} else {
 		data := req.GetData()
-		if !data.HasData() {
-			err = append(err, errors.New("stored data is required"))
+		if errs := validateData(data); errs != nil {
+			err = append(err, errs)
 		}
-		if !data.HasDataNonce() {
-			err = append(err, errors.New("stored data nonce is required"))
+	}
+	if len(err) > 0 {
+		return errors.Join(err...)
+	}
+	return nil
+}
+
+func validateBatchUploadRequest(req *pb.BatchUploadRequest) error {
+	err := make([]error, 0)
+	data := req.GetData()
+	if len(data) == 0 {
+		err = append(err, errors.New("data empty"))
+	} else {
+		for _, d := range data {
+			if errs := validateData(d); errs != nil {
+				err = append(err, errs)
+			}
 		}
-		if !data.HasDek() {
-			err = append(err, errors.New("dek is required"))
-		}
-		if !data.HasDekNonce() {
-			err = append(err, errors.New("dek nonce is required"))
-		}
-		if !data.HasType() {
-			err = append(err, errors.New("invalid type"))
-		}
-		if !data.HasVersion() {
-			err = append(err, errors.New("version is required"))
-		}
+	}
+	if len(err) > 0 {
+		return errors.Join(err...)
+	}
+	return nil
+}
+
+func validateData(data *pb.Data) error {
+	err := make([]error, 0)
+	if !data.HasData() {
+		err = append(err, errors.New("stored data is required"))
+	}
+	if !data.HasDataNonce() {
+		err = append(err, errors.New("stored data nonce is required"))
+	}
+	if !data.HasDek() {
+		err = append(err, errors.New("dek is required"))
+	}
+	if !data.HasDekNonce() {
+		err = append(err, errors.New("dek nonce is required"))
+	}
+	if !data.HasType() {
+		err = append(err, errors.New("invalid type"))
+	}
+	if !data.HasVersion() {
+		err = append(err, errors.New("version is required"))
 	}
 	if len(err) > 0 {
 		return errors.Join(err...)

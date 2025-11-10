@@ -30,10 +30,19 @@ message UploadRequest {
   Data data = 1;
 }
 
+message BatchUploadRequest {
+  repeated Data data = 1;
+}
+
 message UploadResponse {
   Data data = 1;
 }
 
+message BatchUploadResponse {
+  repeated Data data = 1;
+}
+
 service StoredData {
   rpc Upload(UploadRequest) returns(UploadResponse);
+  rpc BatchUpload(BatchUploadRequest) returns(BatchUploadResponse);
 }

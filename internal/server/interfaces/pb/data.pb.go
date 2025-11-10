@@ -7,11 +7,12 @@
 package pb
 
 import (
+	reflect "reflect"
+	unsafe "unsafe"
+
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	_ "google.golang.org/protobuf/types/gofeaturespb"
-	reflect "reflect"
-	unsafe "unsafe"
 )
 
 const (
@@ -471,6 +472,65 @@ func (b0 UploadRequest_builder) Build() *UploadRequest {
 	return m0
 }
 
+type BatchUploadRequest struct {
+	state           protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Data *[]*Data               `protobuf:"bytes,1,rep,name=data"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *BatchUploadRequest) Reset() {
+	*x = BatchUploadRequest{}
+	mi := &file_app_api_proto_data_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BatchUploadRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BatchUploadRequest) ProtoMessage() {}
+
+func (x *BatchUploadRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_app_api_proto_data_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *BatchUploadRequest) GetData() []*Data {
+	if x != nil {
+		if x.xxx_hidden_Data != nil {
+			return *x.xxx_hidden_Data
+		}
+	}
+	return nil
+}
+
+func (x *BatchUploadRequest) SetData(v []*Data) {
+	x.xxx_hidden_Data = &v
+}
+
+type BatchUploadRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Data []*Data
+}
+
+func (b0 BatchUploadRequest_builder) Build() *BatchUploadRequest {
+	m0 := &BatchUploadRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Data = &b.Data
+	return m0
+}
+
 type UploadResponse struct {
 	state           protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Data *Data                  `protobuf:"bytes,1,opt,name=data"`
@@ -480,7 +540,7 @@ type UploadResponse struct {
 
 func (x *UploadResponse) Reset() {
 	*x = UploadResponse{}
-	mi := &file_app_api_proto_data_proto_msgTypes[2]
+	mi := &file_app_api_proto_data_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -492,7 +552,7 @@ func (x *UploadResponse) String() string {
 func (*UploadResponse) ProtoMessage() {}
 
 func (x *UploadResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_app_api_proto_data_proto_msgTypes[2]
+	mi := &file_app_api_proto_data_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -539,6 +599,65 @@ func (b0 UploadResponse_builder) Build() *UploadResponse {
 	return m0
 }
 
+type BatchUploadResponse struct {
+	state           protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Data *[]*Data               `protobuf:"bytes,1,rep,name=data"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *BatchUploadResponse) Reset() {
+	*x = BatchUploadResponse{}
+	mi := &file_app_api_proto_data_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BatchUploadResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BatchUploadResponse) ProtoMessage() {}
+
+func (x *BatchUploadResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_app_api_proto_data_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *BatchUploadResponse) GetData() []*Data {
+	if x != nil {
+		if x.xxx_hidden_Data != nil {
+			return *x.xxx_hidden_Data
+		}
+	}
+	return nil
+}
+
+func (x *BatchUploadResponse) SetData(v []*Data) {
+	x.xxx_hidden_Data = &v
+}
+
+type BatchUploadResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Data []*Data
+}
+
+func (b0 BatchUploadResponse_builder) Build() *BatchUploadResponse {
+	m0 := &BatchUploadResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Data = &b.Data
+	return m0
+}
+
 var File_app_api_proto_data_proto protoreflect.FileDescriptor
 
 const file_app_api_proto_data_proto_rawDesc = "" +
@@ -561,32 +680,43 @@ const file_app_api_proto_data_proto_rawDesc = "" +
 	"\bBankCard\x10\x02\x12\t\n" +
 	"\x05Other\x10\x03\"-\n" +
 	"\rUploadRequest\x12\x1c\n" +
-	"\x04data\x18\x01 \x01(\v2\b.go.DataR\x04data\".\n" +
+	"\x04data\x18\x01 \x01(\v2\b.go.DataR\x04data\"2\n" +
+	"\x12BatchUploadRequest\x12\x1c\n" +
+	"\x04data\x18\x01 \x03(\v2\b.go.DataR\x04data\".\n" +
 	"\x0eUploadResponse\x12\x1c\n" +
-	"\x04data\x18\x01 \x01(\v2\b.go.DataR\x04data2=\n" +
+	"\x04data\x18\x01 \x01(\v2\b.go.DataR\x04data\"3\n" +
+	"\x13BatchUploadResponse\x12\x1c\n" +
+	"\x04data\x18\x01 \x03(\v2\b.go.DataR\x04data2}\n" +
 	"\n" +
 	"StoredData\x12/\n" +
-	"\x06Upload\x12\x11.go.UploadRequest\x1a\x12.go.UploadResponseB\rZ\x03/pb\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"\x06Upload\x12\x11.go.UploadRequest\x1a\x12.go.UploadResponse\x12>\n" +
+	"\vBatchUpload\x12\x16.go.BatchUploadRequest\x1a\x17.go.BatchUploadResponseB\rZ\x03/pb\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_app_api_proto_data_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_app_api_proto_data_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_app_api_proto_data_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_app_api_proto_data_proto_goTypes = []any{
-	(Data_DataType)(0),     // 0: go.Data.DataType
-	(*Data)(nil),           // 1: go.Data
-	(*UploadRequest)(nil),  // 2: go.UploadRequest
-	(*UploadResponse)(nil), // 3: go.UploadResponse
+	(Data_DataType)(0),          // 0: go.Data.DataType
+	(*Data)(nil),                // 1: go.Data
+	(*UploadRequest)(nil),       // 2: go.UploadRequest
+	(*BatchUploadRequest)(nil),  // 3: go.BatchUploadRequest
+	(*UploadResponse)(nil),      // 4: go.UploadResponse
+	(*BatchUploadResponse)(nil), // 5: go.BatchUploadResponse
 }
 var file_app_api_proto_data_proto_depIdxs = []int32{
 	0, // 0: go.Data.type:type_name -> go.Data.DataType
 	1, // 1: go.UploadRequest.data:type_name -> go.Data
-	1, // 2: go.UploadResponse.data:type_name -> go.Data
-	2, // 3: go.StoredData.Upload:input_type -> go.UploadRequest
-	3, // 4: go.StoredData.Upload:output_type -> go.UploadResponse
-	4, // [4:5] is the sub-list for method output_type
-	3, // [3:4] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	1, // 2: go.BatchUploadRequest.data:type_name -> go.Data
+	1, // 3: go.UploadResponse.data:type_name -> go.Data
+	1, // 4: go.BatchUploadResponse.data:type_name -> go.Data
+	2, // 5: go.StoredData.Upload:input_type -> go.UploadRequest
+	3, // 6: go.StoredData.BatchUpload:input_type -> go.BatchUploadRequest
+	4, // 7: go.StoredData.Upload:output_type -> go.UploadResponse
+	5, // 8: go.StoredData.BatchUpload:output_type -> go.BatchUploadResponse
+	7, // [7:9] is the sub-list for method output_type
+	5, // [5:7] is the sub-list for method input_type
+	5, // [5:5] is the sub-list for extension type_name
+	5, // [5:5] is the sub-list for extension extendee
+	0, // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_app_api_proto_data_proto_init() }
@@ -600,7 +730,7 @@ func file_app_api_proto_data_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_app_api_proto_data_proto_rawDesc), len(file_app_api_proto_data_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   3,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

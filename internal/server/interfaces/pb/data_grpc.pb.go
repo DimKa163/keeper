@@ -8,6 +8,7 @@ package pb
 
 import (
 	context "context"
+
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -19,7 +20,8 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	StoredData_Upload_FullMethodName = "/go.StoredData/Upload"
+	StoredData_Upload_FullMethodName      = "/go.StoredData/Upload"
+	StoredData_BatchUpload_FullMethodName = "/go.StoredData/BatchUpload"
 )
 
 // StoredDataClient is the client API for StoredData service.
@@ -27,6 +29,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type StoredDataClient interface {
 	Upload(ctx context.Context, in *UploadRequest, opts ...grpc.CallOption) (*UploadResponse, error)
+	BatchUpload(ctx context.Context, in *BatchUploadRequest, opts ...grpc.CallOption) (*BatchUploadResponse, error)
 }
 
 type storedDataClient struct {
@@ -47,11 +50,22 @@ func (c *storedDataClient) Upload(ctx context.Context, in *UploadRequest, opts .
 	return out, nil
 }
 
+func (c *storedDataClient) BatchUpload(ctx context.Context, in *BatchUploadRequest, opts ...grpc.CallOption) (*BatchUploadResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(BatchUploadResponse)
+	err := c.cc.Invoke(ctx, StoredData_BatchUpload_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // StoredDataServer is the server API for StoredData service.
 // All implementations must embed UnimplementedStoredDataServer
 // for forward compatibility.
 type StoredDataServer interface {
 	Upload(context.Context, *UploadRequest) (*UploadResponse, error)
+	BatchUpload(context.Context, *BatchUploadRequest) (*BatchUploadResponse, error)
 	mustEmbedUnimplementedStoredDataServer()
 }
 
@@ -64,6 +78,9 @@ type UnimplementedStoredDataServer struct{}
 
 func (UnimplementedStoredDataServer) Upload(context.Context, *UploadRequest) (*UploadResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Upload not implemented")
+}
+func (UnimplementedStoredDataServer) BatchUpload(context.Context, *BatchUploadRequest) (*BatchUploadResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method BatchUpload not implemented")
 }
 func (UnimplementedStoredDataServer) mustEmbedUnimplementedStoredDataServer() {}
 func (UnimplementedStoredDataServer) testEmbeddedByValue()                    {}
@@ -104,6 +121,24 @@ func _StoredData_Upload_Handler(srv interface{}, ctx context.Context, dec func(i
 	return interceptor(ctx, in, info, handler)
 }
 
+func _StoredData_BatchUpload_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BatchUploadRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StoredDataServer).BatchUpload(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: StoredData_BatchUpload_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StoredDataServer).BatchUpload(ctx, req.(*BatchUploadRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // StoredData_ServiceDesc is the grpc.ServiceDesc for StoredData service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -114,6 +149,10 @@ var StoredData_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Upload",
 			Handler:    _StoredData_Upload_Handler,
+		},
+		{
+			MethodName: "BatchUpload",
+			Handler:    _StoredData_BatchUpload_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

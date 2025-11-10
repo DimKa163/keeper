@@ -2,12 +2,17 @@ package domain
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/beevik/guid"
 )
 
 type StoredDataType int
+
+var (
+	ErrDataConflict = errors.New("data conflict")
+)
 
 const (
 	LoginPassType StoredDataType = iota
@@ -34,14 +39,17 @@ type StoredData struct {
 	Version   int32
 }
 
-func (sd *StoredData) Compare(other *StoredData) int {
-	if sd.Version == other.Version {
-		return 0
+func (sd *StoredData) Update(name string, large bool, dekNonce, dek, dataNonce, data []byte, version int32) error {
+	if version <= sd.Version {
+		return ErrDataConflict
 	}
-	if sd.Version < other.Version {
-		return -1
-	}
-	return 1
+	sd.Name = name
+	sd.Large = large
+	sd.DekNonce = dekNonce
+	sd.Dek = dek
+	sd.DataNonce = dataNonce
+	sd.Data = data
+	return nil
 }
 
 func (sd *StoredData) UpVersion() {
