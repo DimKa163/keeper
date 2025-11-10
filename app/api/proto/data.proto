@@ -1,0 +1,48 @@
+﻿edition = "2023";
+
+package go;
+
+
+import "google/protobuf/go_features.proto";
+option features.(pb.go).api_level = API_OPAQUE;
+
+option go_package = "/pb";
+
+message Data {
+  string id = 1;
+  string name = 2;
+  enum DataType {
+    LoginPass = 0;
+    Text = 1;
+    BankCard = 2;
+    Other = 3;
+  }
+  DataType type  = 3;
+  bool large = 4;
+  bytes dek_nonce = 5;
+  bytes dek = 6;
+  bytes data_nonce = 7;
+  bytes data = 8;
+  int32 version = 9;
+}
+
+message UploadRequest {
+  Data data = 1;
+}
+
+message BatchUploadRequest {
+  repeated Data data = 1;
+}
+
+message UploadResponse {
+  Data data = 1;
+}
+
+message BatchUploadResponse {
+  repeated Data data = 1;
+}
+
+service StoredData {
+  rpc Upload(UploadRequest) returns(UploadResponse);
+  rpc BatchUpload(BatchUploadRequest) returns(BatchUploadResponse);
+}

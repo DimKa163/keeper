@@ -8,10 +8,11 @@ import (
 	reflect "reflect"
 
 	auth "github.com/DimKa163/keeper/internal/server/domain/auth"
+	guid "github.com/beevik/guid"
 	gomock "github.com/golang/mock/gomock"
 )
 
-// MockEngine is a mock of Engine interfaces.
+// MockEngine is a mock of Engine interface.
 type MockEngine struct {
 	ctrl     *gomock.Controller
 	recorder *MockEngineMockRecorder
@@ -35,7 +36,7 @@ func (m *MockEngine) EXPECT() *MockEngineMockRecorder {
 }
 
 // GenerateToken mocks base method.
-func (m *MockEngine) GenerateToken(userID int64) (string, error) {
+func (m *MockEngine) GenerateToken(userID guid.Guid) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GenerateToken", userID)
 	ret0, _ := ret[0].(string)

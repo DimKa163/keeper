@@ -3,6 +3,7 @@ package interfaces
 import (
 	"context"
 	"errors"
+
 	"github.com/DimKa163/keeper/internal/server/domain"
 	"github.com/DimKa163/keeper/internal/server/interfaces/pb"
 	"google.golang.org/grpc"
@@ -29,12 +30,11 @@ func (us *UsersServer) Login(ctx context.Context, in *pb.User) (*pb.UserResponse
 		return nil, err
 	}
 
-	token, salt, err := us.app.Login(ctx, in.GetLogin(), in.GetPassword())
+	token, err := us.app.Login(ctx, in.GetLogin(), in.GetPassword())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	response.SetToken(token)
-	response.SetEncryptedSalt(salt)
 
 	return &response, nil
 }
@@ -44,12 +44,11 @@ func (us *UsersServer) Register(ctx context.Context, in *pb.User) (*pb.UserRespo
 	if err := validate(in); err != nil {
 		return nil, err
 	}
-	token, salt, err := us.app.Register(ctx, in.GetLogin(), in.GetPassword())
+	token, err := us.app.Register(ctx, in.GetLogin(), in.GetPassword())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	response.SetToken(token)
-	response.SetEncryptedSalt(salt)
 	return &response, nil
 }
 

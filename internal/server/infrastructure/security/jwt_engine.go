@@ -5,6 +5,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/beevik/guid"
+
 	"github.com/DimKa163/keeper/internal/server/domain/auth"
 	"github.com/golang-jwt/jwt/v4"
 )
@@ -21,15 +23,15 @@ func NewJWTEngine(config *JWTConfig) *JWTEngine {
 	return &JWTEngine{config}
 }
 
-func (engine *JWTEngine) GenerateToken(userID int64) (string, error) {
+func (engine *JWTEngine) GenerateToken(userID guid.Guid) (string, error) {
 	if engine.SecretKey == nil {
 		return "", errors.New("secret key is required")
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, auth.Claims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(engine.TokenExpiration)),
+			ID:        userID.String(),
 		},
-		UserID: userID,
 	})
 
 	tokenString, err := token.SignedString(engine.SecretKey)

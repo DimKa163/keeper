@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/beevik/guid"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -14,7 +16,7 @@ func TestJWTEngine_GenerateToken(t *testing.T) {
 	}
 	sut := createJWTEngine(config)
 
-	token, err := sut.GenerateToken(1)
+	token, err := sut.GenerateToken(*guid.New())
 	if err != nil {
 		t.Fatalf("generate tokent return err: %v", err)
 	}
@@ -31,7 +33,7 @@ func TestJWTEngine_GenerateToken_WithEmptyKeyShouldBeError(t *testing.T) {
 	}
 	sut := createJWTEngine(config)
 
-	_, err := sut.GenerateToken(1)
+	_, err := sut.GenerateToken(*guid.New())
 	assert.Error(t, err)
 }
 

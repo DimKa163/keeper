@@ -3,25 +3,24 @@ package domain
 import (
 	"context"
 	"time"
+
+	"github.com/beevik/guid"
 )
 
 // User data owner
 type User struct {
-	ID          int64
-	CreatedAt   time.Time
-	Login       string
-	Password    []byte
-	Salt        []byte
-	EncryptSalt []byte
+	ID        guid.Guid
+	CreatedAt *time.Time
+	Login     string
+	Password  []byte
+	Salt      []byte
 }
 
-func NewUser(login string, pass, salt, encSalt []byte) *User {
+func NewUser(login string, pass, salt []byte) *User {
 	return &User{
-		CreatedAt:   time.Now(),
-		Login:       login,
-		Password:    pass,
-		Salt:        salt,
-		EncryptSalt: encSalt,
+		Login:    login,
+		Password: pass,
+		Salt:     salt,
 	}
 }
 
@@ -33,7 +32,7 @@ type UserRepository interface {
 
 type UserService interface {
 	// Login authenticate users
-	Login(ctx context.Context, login string, password string) (string, []byte, error)
+	Login(ctx context.Context, login string, password string) (string, error)
 	// Register create new user
-	Register(ctx context.Context, login string, password string) (string, []byte, error)
+	Register(ctx context.Context, login string, password string) (string, error)
 }
