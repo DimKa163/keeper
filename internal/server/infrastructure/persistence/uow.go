@@ -19,7 +19,7 @@ func (u *UnitOfWork) UserRepository() domain.UserRepository {
 	return NewUserRepository(u.db)
 }
 
-func (u *UnitOfWork) StoredDataRepository() domain.StoredDataRepository {
+func (u *UnitOfWork) DataRepository() domain.DataRepository {
 	return NewStoredDataRepository(u.db)
 }
 

@@ -13,31 +13,31 @@ import (
 	gomock "github.com/golang/mock/gomock"
 )
 
-// MockStoredDataRepository is a mock of StoredDataRepository interface.
-type MockStoredDataRepository struct {
+// MockDataRepository is a mock of DataRepository interface.
+type MockDataRepository struct {
 	ctrl     *gomock.Controller
-	recorder *MockStoredDataRepositoryMockRecorder
+	recorder *MockDataRepositoryMockRecorder
 }
 
-// MockStoredDataRepositoryMockRecorder is the mock recorder for MockStoredDataRepository.
-type MockStoredDataRepositoryMockRecorder struct {
-	mock *MockStoredDataRepository
+// MockDataRepositoryMockRecorder is the mock recorder for MockDataRepository.
+type MockDataRepositoryMockRecorder struct {
+	mock *MockDataRepository
 }
 
-// NewMockStoredDataRepository creates a new mock instance.
-func NewMockStoredDataRepository(ctrl *gomock.Controller) *MockStoredDataRepository {
-	mock := &MockStoredDataRepository{ctrl: ctrl}
-	mock.recorder = &MockStoredDataRepositoryMockRecorder{mock}
+// NewMockDataRepository creates a new mock instance.
+func NewMockDataRepository(ctrl *gomock.Controller) *MockDataRepository {
+	mock := &MockDataRepository{ctrl: ctrl}
+	mock.recorder = &MockDataRepositoryMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockStoredDataRepository) EXPECT() *MockStoredDataRepositoryMockRecorder {
+func (m *MockDataRepository) EXPECT() *MockDataRepositoryMockRecorder {
 	return m.recorder
 }
 
 // Delete mocks base method.
-func (m *MockStoredDataRepository) Delete(ctx context.Context, id guid.Guid) error {
+func (m *MockDataRepository) Delete(ctx context.Context, id guid.Guid) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Delete", ctx, id)
 	ret0, _ := ret[0].(error)
@@ -45,43 +45,43 @@ func (m *MockStoredDataRepository) Delete(ctx context.Context, id guid.Guid) err
 }
 
 // Delete indicates an expected call of Delete.
-func (mr *MockStoredDataRepositoryMockRecorder) Delete(ctx, id interface{}) *gomock.Call {
+func (mr *MockDataRepositoryMockRecorder) Delete(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockStoredDataRepository)(nil).Delete), ctx, id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockDataRepository)(nil).Delete), ctx, id)
 }
 
 // Get mocks base method.
-func (m *MockStoredDataRepository) Get(ctx context.Context, id guid.Guid) (*domain.StoredData, error) {
+func (m *MockDataRepository) Get(ctx context.Context, id guid.Guid) (*domain.Data, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", ctx, id)
-	ret0, _ := ret[0].(*domain.StoredData)
+	ret0, _ := ret[0].(*domain.Data)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Get indicates an expected call of Get.
-func (mr *MockStoredDataRepositoryMockRecorder) Get(ctx, id interface{}) *gomock.Call {
+func (mr *MockDataRepositoryMockRecorder) Get(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockStoredDataRepository)(nil).Get), ctx, id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockDataRepository)(nil).Get), ctx, id)
 }
 
 // GetAll mocks base method.
-func (m *MockStoredDataRepository) GetAll(ctx context.Context, userID guid.Guid, limit, skip int) ([]*domain.StoredData, error) {
+func (m *MockDataRepository) GetAll(ctx context.Context, userID guid.Guid, limit, skip int) ([]*domain.Data, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAll", ctx, userID, limit, skip)
-	ret0, _ := ret[0].([]*domain.StoredData)
+	ret0, _ := ret[0].([]*domain.Data)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetAll indicates an expected call of GetAll.
-func (mr *MockStoredDataRepositoryMockRecorder) GetAll(ctx, userID, limit, skip interface{}) *gomock.Call {
+func (mr *MockDataRepositoryMockRecorder) GetAll(ctx, userID, limit, skip interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockStoredDataRepository)(nil).GetAll), ctx, userID, limit, skip)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockDataRepository)(nil).GetAll), ctx, userID, limit, skip)
 }
 
 // Insert mocks base method.
-func (m *MockStoredDataRepository) Insert(ctx context.Context, data *domain.StoredData) error {
+func (m *MockDataRepository) Insert(ctx context.Context, data *domain.Data) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Insert", ctx, data)
 	ret0, _ := ret[0].(error)
@@ -89,13 +89,13 @@ func (m *MockStoredDataRepository) Insert(ctx context.Context, data *domain.Stor
 }
 
 // Insert indicates an expected call of Insert.
-func (mr *MockStoredDataRepositoryMockRecorder) Insert(ctx, data interface{}) *gomock.Call {
+func (mr *MockDataRepositoryMockRecorder) Insert(ctx, data interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockStoredDataRepository)(nil).Insert), ctx, data)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockDataRepository)(nil).Insert), ctx, data)
 }
 
 // Update mocks base method.
-func (m *MockStoredDataRepository) Update(ctx context.Context, data *domain.StoredData) error {
+func (m *MockDataRepository) Update(ctx context.Context, data *domain.Data) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Update", ctx, data)
 	ret0, _ := ret[0].(error)
@@ -103,9 +103,9 @@ func (m *MockStoredDataRepository) Update(ctx context.Context, data *domain.Stor
 }
 
 // Update indicates an expected call of Update.
-func (mr *MockStoredDataRepositoryMockRecorder) Update(ctx, data interface{}) *gomock.Call {
+func (mr *MockDataRepositoryMockRecorder) Update(ctx, data interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockStoredDataRepository)(nil).Update), ctx, data)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockDataRepository)(nil).Update), ctx, data)
 }
 
 // MockFilePartRepository is a mock of FilePartRepository interface.

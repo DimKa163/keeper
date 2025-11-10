@@ -35,6 +35,20 @@ func (m *MockUnitOfWork) EXPECT() *MockUnitOfWorkMockRecorder {
 	return m.recorder
 }
 
+// DataRepository mocks base method.
+func (m *MockUnitOfWork) DataRepository() domain.DataRepository {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DataRepository")
+	ret0, _ := ret[0].(domain.DataRepository)
+	return ret0
+}
+
+// DataRepository indicates an expected call of DataRepository.
+func (mr *MockUnitOfWorkMockRecorder) DataRepository() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DataRepository", reflect.TypeOf((*MockUnitOfWork)(nil).DataRepository))
+}
+
 // FilePartRepository mocks base method.
 func (m *MockUnitOfWork) FilePartRepository() domain.FilePartRepository {
 	m.ctrl.T.Helper()
@@ -47,20 +61,6 @@ func (m *MockUnitOfWork) FilePartRepository() domain.FilePartRepository {
 func (mr *MockUnitOfWorkMockRecorder) FilePartRepository() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FilePartRepository", reflect.TypeOf((*MockUnitOfWork)(nil).FilePartRepository))
-}
-
-// StoredDataRepository mocks base method.
-func (m *MockUnitOfWork) StoredDataRepository() domain.StoredDataRepository {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "StoredDataRepository")
-	ret0, _ := ret[0].(domain.StoredDataRepository)
-	return ret0
-}
-
-// StoredDataRepository indicates an expected call of StoredDataRepository.
-func (mr *MockUnitOfWorkMockRecorder) StoredDataRepository() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StoredDataRepository", reflect.TypeOf((*MockUnitOfWork)(nil).StoredDataRepository))
 }
 
 // Tx mocks base method.

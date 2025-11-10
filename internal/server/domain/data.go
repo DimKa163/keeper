@@ -8,51 +8,51 @@ import (
 	"github.com/beevik/guid"
 )
 
-type StoredDataType int
-
 var (
 	ErrDataConflict = errors.New("data conflict")
 )
 
+type DataType int
+
 const (
-	LoginPassType StoredDataType = iota
+	LoginPassType DataType = iota
 	TextType
 	BankCardType
 	OtherType
 )
 
-func (d StoredDataType) String() string {
+func (d DataType) String() string {
 	return [...]string{"login_pass", "text", "bank_card", "other"}[d]
 }
 
-type StoredData struct {
-	ID        guid.Guid
-	CreatedAt time.Time
-	Name      string
-	UserID    guid.Guid
-	Type      StoredDataType
-	Large     bool
-	DekNonce  []byte
-	Dek       []byte
-	DataNonce []byte
-	Data      []byte
-	Version   int32
+type Data struct {
+	ID           guid.Guid
+	CreatedAt    time.Time
+	Name         string
+	UserID       guid.Guid
+	Type         DataType
+	Large        bool
+	DekNonce     []byte
+	Dek          []byte
+	PayloadNonce []byte
+	Payload      []byte
+	Version      int32
 }
 
-func (sd *StoredData) Update(name string, large bool, dekNonce, dek, dataNonce, data []byte, version int32) error {
-	if version <= sd.Version {
+func (sd *Data) Update(name string, large bool, dekNonce, dek, dataNonce, data []byte, version int32) error {
+	if version != sd.Version {
 		return ErrDataConflict
 	}
 	sd.Name = name
 	sd.Large = large
 	sd.DekNonce = dekNonce
 	sd.Dek = dek
-	sd.DataNonce = dataNonce
-	sd.Data = data
+	sd.PayloadNonce = dataNonce
+	sd.Payload = data
 	return nil
 }
 
-func (sd *StoredData) UpVersion() {
+func (sd *Data) UpVersion() {
 	sd.Version += 1
 }
 
@@ -63,11 +63,11 @@ type FilePart struct {
 	Nonce  []byte
 }
 
-type StoredDataRepository interface {
-	Get(ctx context.Context, id guid.Guid) (*StoredData, error)
-	GetAll(ctx context.Context, userID guid.Guid, limit, skip int) ([]*StoredData, error)
-	Insert(ctx context.Context, data *StoredData) error
-	Update(ctx context.Context, data *StoredData) error
+type DataRepository interface {
+	Get(ctx context.Context, id guid.Guid) (*Data, error)
+	GetAll(ctx context.Context, userID guid.Guid, limit, skip int) ([]*Data, error)
+	Insert(ctx context.Context, data *Data) error
+	Update(ctx context.Context, data *Data) error
 	Delete(ctx context.Context, id guid.Guid) error
 }
 

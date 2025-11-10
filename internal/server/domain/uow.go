@@ -6,7 +6,7 @@ import "context"
 type UnitOfWork interface {
 	UserRepository() UserRepository
 
-	StoredDataRepository() StoredDataRepository
+	DataRepository() DataRepository
 
 	FilePartRepository() FilePartRepository
 
