@@ -146,128 +146,106 @@ func (mr *MockFilePartRepositoryMockRecorder) Get(ctx, dataID interface{}) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockFilePartRepository)(nil).Get), ctx, dataID)
 }
 
-// MockIDataProvider is a mock of IDataProvider interface.
-type MockIDataProvider struct {
+// MockDataService is a mock of DataService interface.
+type MockDataService struct {
 	ctrl     *gomock.Controller
-	recorder *MockIDataProviderMockRecorder
+	recorder *MockDataServiceMockRecorder
 }
 
-// MockIDataProviderMockRecorder is the mock recorder for MockIDataProvider.
-type MockIDataProviderMockRecorder struct {
-	mock *MockIDataProvider
+// MockDataServiceMockRecorder is the mock recorder for MockDataService.
+type MockDataServiceMockRecorder struct {
+	mock *MockDataService
 }
 
-// NewMockIDataProvider creates a new mock instance.
-func NewMockIDataProvider(ctrl *gomock.Controller) *MockIDataProvider {
-	mock := &MockIDataProvider{ctrl: ctrl}
-	mock.recorder = &MockIDataProviderMockRecorder{mock}
+// NewMockDataService creates a new mock instance.
+func NewMockDataService(ctrl *gomock.Controller) *MockDataService {
+	mock := &MockDataService{ctrl: ctrl}
+	mock.recorder = &MockDataServiceMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockIDataProvider) EXPECT() *MockIDataProviderMockRecorder {
+func (m *MockDataService) EXPECT() *MockDataServiceMockRecorder {
 	return m.recorder
 }
 
-// ExecuteReader mocks base method.
-func (m *MockIDataProvider) ExecuteReader(ctx context.Context, dataID guid.Guid) domain.Reader {
+// GetIterator mocks base method.
+func (m *MockDataService) GetIterator() domain.DataIterator {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ExecuteReader", ctx, dataID)
-	ret0, _ := ret[0].(domain.Reader)
+	ret := m.ctrl.Call(m, "GetIterator")
+	ret0, _ := ret[0].(domain.DataIterator)
 	return ret0
 }
 
-// ExecuteReader indicates an expected call of ExecuteReader.
-func (mr *MockIDataProviderMockRecorder) ExecuteReader(ctx, dataID interface{}) *gomock.Call {
+// GetIterator indicates an expected call of GetIterator.
+func (mr *MockDataServiceMockRecorder) GetIterator() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExecuteReader", reflect.TypeOf((*MockIDataProvider)(nil).ExecuteReader), ctx, dataID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIterator", reflect.TypeOf((*MockDataService)(nil).GetIterator))
 }
 
-// ExecuteWriter mocks base method.
-func (m *MockIDataProvider) ExecuteWriter(ctx context.Context, dataID guid.Guid) domain.Writer {
+// Push mocks base method.
+func (m *MockDataService) Push(ctx context.Context, data []*domain.Operation) ([]domain.Data, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ExecuteWriter", ctx, dataID)
-	ret0, _ := ret[0].(domain.Writer)
-	return ret0
-}
-
-// ExecuteWriter indicates an expected call of ExecuteWriter.
-func (mr *MockIDataProviderMockRecorder) ExecuteWriter(ctx, dataID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExecuteWriter", reflect.TypeOf((*MockIDataProvider)(nil).ExecuteWriter), ctx, dataID)
-}
-
-// MockWriter is a mock of Writer interface.
-type MockWriter struct {
-	ctrl     *gomock.Controller
-	recorder *MockWriterMockRecorder
-}
-
-// MockWriterMockRecorder is the mock recorder for MockWriter.
-type MockWriterMockRecorder struct {
-	mock *MockWriter
-}
-
-// NewMockWriter creates a new mock instance.
-func NewMockWriter(ctrl *gomock.Controller) *MockWriter {
-	mock := &MockWriter{ctrl: ctrl}
-	mock.recorder = &MockWriterMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockWriter) EXPECT() *MockWriterMockRecorder {
-	return m.recorder
-}
-
-// Write mocks base method.
-func (m *MockWriter) Write(ctx context.Context, part *domain.FilePart) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Write", ctx, part)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Write indicates an expected call of Write.
-func (mr *MockWriterMockRecorder) Write(ctx, part interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Write", reflect.TypeOf((*MockWriter)(nil).Write), ctx, part)
-}
-
-// MockReader is a mock of Reader interface.
-type MockReader struct {
-	ctrl     *gomock.Controller
-	recorder *MockReaderMockRecorder
-}
-
-// MockReaderMockRecorder is the mock recorder for MockReader.
-type MockReaderMockRecorder struct {
-	mock *MockReader
-}
-
-// NewMockReader creates a new mock instance.
-func NewMockReader(ctrl *gomock.Controller) *MockReader {
-	mock := &MockReader{ctrl: ctrl}
-	mock.recorder = &MockReaderMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockReader) EXPECT() *MockReaderMockRecorder {
-	return m.recorder
-}
-
-// Read mocks base method.
-func (m *MockReader) Read(ctx context.Context) (*domain.FilePart, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Read", ctx)
-	ret0, _ := ret[0].(*domain.FilePart)
+	ret := m.ctrl.Call(m, "Push", ctx, data)
+	ret0, _ := ret[0].([]domain.Data)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// Read indicates an expected call of Read.
-func (mr *MockReaderMockRecorder) Read(ctx interface{}) *gomock.Call {
+// Push indicates an expected call of Push.
+func (mr *MockDataServiceMockRecorder) Push(ctx, data interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Read", reflect.TypeOf((*MockReader)(nil).Read), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Push", reflect.TypeOf((*MockDataService)(nil).Push), ctx, data)
+}
+
+// MockDataIterator is a mock of DataIterator interface.
+type MockDataIterator struct {
+	ctrl     *gomock.Controller
+	recorder *MockDataIteratorMockRecorder
+}
+
+// MockDataIteratorMockRecorder is the mock recorder for MockDataIterator.
+type MockDataIteratorMockRecorder struct {
+	mock *MockDataIterator
+}
+
+// NewMockDataIterator creates a new mock instance.
+func NewMockDataIterator(ctrl *gomock.Controller) *MockDataIterator {
+	mock := &MockDataIterator{ctrl: ctrl}
+	mock.recorder = &MockDataIteratorMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockDataIterator) EXPECT() *MockDataIteratorMockRecorder {
+	return m.recorder
+}
+
+// Current mocks base method.
+func (m *MockDataIterator) Current() *domain.Data {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Current")
+	ret0, _ := ret[0].(*domain.Data)
+	return ret0
+}
+
+// Current indicates an expected call of Current.
+func (mr *MockDataIteratorMockRecorder) Current() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Current", reflect.TypeOf((*MockDataIterator)(nil).Current))
+}
+
+// MoveNext mocks base method.
+func (m *MockDataIterator) MoveNext(ctx context.Context) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MoveNext", ctx)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// MoveNext indicates an expected call of MoveNext.
+func (mr *MockDataIteratorMockRecorder) MoveNext(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MoveNext", reflect.TypeOf((*MockDataIterator)(nil).MoveNext), ctx)
 }

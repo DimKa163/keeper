@@ -12,6 +12,18 @@ var (
 	ErrDataConflict = errors.New("data conflict")
 )
 
+type OperationType int
+
+const (
+	InsertOperation OperationType = iota
+	UpdateOperation
+	DeleteOperation
+)
+
+func (ot OperationType) String() string {
+	return [...]string{"insert", "update", "delete"}[ot]
+}
+
 type DataType int
 
 const (
@@ -75,16 +87,18 @@ type FilePartRepository interface {
 	Get(ctx context.Context, dataID int64) ([]*FilePart, error)
 }
 
-type IDataProvider interface {
-	ExecuteWriter(ctx context.Context, dataID guid.Guid) Writer
+type DataService interface {
+	Push(ctx context.Context, data []*Operation) ([]Data, error)
 
-	ExecuteReader(ctx context.Context, dataID guid.Guid) Reader
+	GetIterator() DataIterator
 }
 
-type Writer interface {
-	Write(ctx context.Context, part *FilePart) error
+type Operation struct {
+	*Data
+	OperationType OperationType
 }
 
-type Reader interface {
-	Read(ctx context.Context) (*FilePart, error)
+type DataIterator interface {
+	Current() *Data
+	MoveNext(ctx context.Context) (bool, error)
 }

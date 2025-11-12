@@ -2,13 +2,11 @@ package integration_test
 
 import (
 	"context"
-	"crypto/rand"
 	"fmt"
 	"testing"
 	"time"
 
 	server2 "github.com/DimKa163/keeper/app/server"
-	"github.com/beevik/guid"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
@@ -86,44 +84,44 @@ func TestUserService_Login(t *testing.T) {
 	assert.True(t, resp.HasToken())
 }
 
-func TestDataService_Upload(t *testing.T) {
-	ctx := context.Background()
-	container, serv, err := run(ctx, t, func(s *services) error {
-		return nil
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer container.Terminate(ctx)
-	defer serv.DBPool.Close()
-	defer serv.Shutdown(ctx)
-
-	client := serv.DataClient
-	id := *guid.New()
-	// генерим ерунду так как серверу пофиг что там внутри
-	dek, dekNonce := make([]byte, 32), make([]byte, 16)
-	_, _ = rand.Read(dek)
-	_, _ = rand.Read(dekNonce)
-	dt, dtNonce := make([]byte, 4026), make([]byte, 16)
-	_, _ = rand.Read(dt)
-	_, _ = rand.Read(dtNonce)
-	req := pb.UploadRequest{}
-	data := pb.Data{}
-	data.SetId(id.String())
-	data.SetName("login/pass")
-	data.SetData(dt)
-	data.SetDataNonce(dtNonce)
-	data.SetDek(dek)
-	data.SetDekNonce(dekNonce)
-	data.SetLarge(false)
-	data.SetType(pb.Data_LoginPass)
-	data.SetVersion(1)
-	req.SetData(&data)
-	resp, err := client.Upload(ctx, &req)
-	assert.NoError(t, err)
-	assert.NotNil(t, resp)
-
-}
+//func TestDataService_Upload(t *testing.T) {
+//	ctx := context.Background()
+//	container, serv, err := run(ctx, t, func(s *services) error {
+//		return nil
+//	})
+//	if err != nil {
+//		t.Fatal(err)
+//	}
+//	defer container.Terminate(ctx)
+//	defer serv.DBPool.Close()
+//	defer serv.Shutdown(ctx)
+//
+//	client := serv.DataClient
+//	id := *guid.New()
+//	// генерим ерунду так как серверу пофиг что там внутри
+//	dek, dekNonce := make([]byte, 32), make([]byte, 16)
+//	_, _ = rand.Read(dek)
+//	_, _ = rand.Read(dekNonce)
+//	dt, dtNonce := make([]byte, 4026), make([]byte, 16)
+//	_, _ = rand.Read(dt)
+//	_, _ = rand.Read(dtNonce)
+//	req := pb.UploadRequest{}
+//	data := pb.Data{}
+//	data.SetId(id.String())
+//	data.SetName("login/pass")
+//	data.SetData(dt)
+//	data.SetDataNonce(dtNonce)
+//	data.SetDek(dek)
+//	data.SetDekNonce(dekNonce)
+//	data.SetLarge(false)
+//	data.SetType(pb.Data_LoginPass)
+//	data.SetVersion(1)
+//	req.SetData(&data)
+//	resp, err := client.Upload(ctx, &req)
+//	assert.NoError(t, err)
+//	assert.NotNil(t, resp)
+//
+//}
 
 func run(ctx context.Context, t *testing.T, beforeFn func(pool *services) error) (testcontainers.Container, *services, error) {
 	dbName := "keeperDb"

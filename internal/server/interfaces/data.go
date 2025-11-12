@@ -3,6 +3,7 @@ package interfaces
 import (
 	"context"
 	"errors"
+	"github.com/DimKa163/keeper/internal/server/shared/auth"
 
 	"github.com/DimKa163/keeper/internal/server/domain"
 	"github.com/DimKa163/keeper/internal/server/interfaces/pb"
@@ -25,44 +26,22 @@ func NewDataServer(app *usecase.DataService) *DataServer {
 func (ds *DataServer) Bind(server *grpc.Server) {
 	pb.RegisterStoredDataServer(server, ds)
 }
-
-func (ds *DataServer) Upload(ctx context.Context, request *pb.UploadRequest) (*pb.UploadResponse, error) {
-	var response pb.UploadResponse
-	if err := validateUpload(request); err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
-	}
-	dt := request.GetData()
-	data, err := toIn(dt)
-	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
-	}
-	sD, err := ds.app.Upload(ctx, data)
-	if err != nil {
-		if errors.Is(err, domain.ErrDataConflict) {
-			return nil, status.Error(codes.FailedPrecondition, err.Error())
-		}
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-	response.SetData(toOut(sD))
-	return &response, nil
-}
-
-func (ds *DataServer) BatchUpload(ctx context.Context, request *pb.BatchUploadRequest) (*pb.BatchUploadResponse, error) {
-	var response pb.BatchUploadResponse
+func (ds *DataServer) Push(ctx context.Context, request *pb.PushRequest) (*pb.PushResponse, error) {
+	var response pb.PushResponse
 	if err := validateBatchUploadRequest(request); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	dataSlice := make([]*usecase.Data, len(request.GetData()))
-	for i, d := range request.GetData() {
-		data, err := toIn(d)
+	dataSlice := make([]*domain.Operation, len(request.GetRequests()))
+	for i, d := range request.GetRequests() {
+		data, err := toIn(ctx, d)
 		if err != nil {
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
 		dataSlice[i] = data
 	}
 
-	result, err := ds.app.BatchUpload(ctx, dataSlice)
+	result, err := ds.app.Push(ctx, dataSlice)
 	if err != nil {
 		if errors.Is(err, domain.ErrDataConflict) {
 			return nil, status.Error(codes.FailedPrecondition, err.Error())
@@ -70,7 +49,7 @@ func (ds *DataServer) BatchUpload(ctx context.Context, request *pb.BatchUploadRe
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	resp := make([]*pb.Data, len(result))
+	resp := make([]*pb.OperationResponse, len(result))
 	for i, d := range result {
 		resp[i] = toOut(d)
 	}
@@ -78,25 +57,30 @@ func (ds *DataServer) BatchUpload(ctx context.Context, request *pb.BatchUploadRe
 	return &response, nil
 }
 
-func validateUpload(req *pb.UploadRequest) error {
-	err := make([]error, 0)
-	if !req.HasData() {
-		err = append(err, errors.New("data is required"))
-	} else {
-		data := req.GetData()
-		if errs := validateData(data); errs != nil {
-			err = append(err, errs)
-		}
+func (ds *DataServer) Poll(_ *pb.PollRequest, srv pb.StoredData_PollServer) error {
+	iterator := ds.app.GetIterator()
+	next, err := iterator.MoveNext(srv.Context())
+	if err != nil {
+		return status.Error(codes.Internal, err.Error())
 	}
-	if len(err) > 0 {
-		return errors.Join(err...)
+
+	for next {
+		it := iterator.Current()
+		resp := toOut(it)
+		if err := srv.Send(resp.GetData()); err != nil {
+			return status.Error(codes.Internal, err.Error())
+		}
+		next, err = iterator.MoveNext(srv.Context())
+		if err != nil {
+			return status.Error(codes.Internal, err.Error())
+		}
 	}
 	return nil
 }
 
-func validateBatchUploadRequest(req *pb.BatchUploadRequest) error {
+func validateBatchUploadRequest(req *pb.PushRequest) error {
 	err := make([]error, 0)
-	data := req.GetData()
+	data := req.GetRequests()
 	if len(data) == 0 {
 		err = append(err, errors.New("data empty"))
 	} else {
@@ -112,11 +96,12 @@ func validateBatchUploadRequest(req *pb.BatchUploadRequest) error {
 	return nil
 }
 
-func validateData(data *pb.Data) error {
+func validateData(operation *pb.Operation) error {
 	err := make([]error, 0)
-	if !data.HasData() {
+	if !operation.HasData() {
 		err = append(err, errors.New("stored data is required"))
 	}
+	data := operation.GetData()
 	if !data.HasDataNonce() {
 		err = append(err, errors.New("stored data nonce is required"))
 	}
@@ -138,17 +123,24 @@ func validateData(data *pb.Data) error {
 	return nil
 }
 
-func toIn(data *pb.Data) (*usecase.Data, error) {
-	dt := usecase.Data{}
+func toIn(ctx context.Context, op *pb.Operation) (*domain.Operation, error) {
+	data := op.GetData()
+	oper := domain.Operation{}
+	dt := domain.Data{}
 	id, err := guid.ParseString(data.GetId())
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	user, err := auth.User(ctx)
+	if err != nil {
+		return nil, err
 	}
 	dt.ID = *id
 	dt.Name = data.GetName()
 	dt.Large = data.GetLarge()
 	dt.Payload = data.GetData()
 	dt.PayloadNonce = data.GetDataNonce()
+	dt.UserID = user
 	dt.Dek = data.GetDek()
 	dt.DekNonce = data.GetDekNonce()
 	dt.Version = data.GetVersion()
@@ -162,28 +154,30 @@ func toIn(data *pb.Data) (*usecase.Data, error) {
 	case pb.Data_Other:
 		dt.Type = domain.OtherType
 	}
-	return &dt, nil
+	oper.Data = &dt
+	return &oper, nil
 }
 
-func toOut(data *usecase.Data) *pb.Data {
-	resp := &pb.Data{}
-	resp.SetId(data.ID.String())
-	resp.SetName(data.Name)
-	resp.SetVersion(data.Version)
-	resp.SetData(data.Payload)
-	resp.SetDataNonce(data.PayloadNonce)
-	resp.SetDek(data.Dek)
-	resp.SetDekNonce(data.DekNonce)
-	resp.SetLarge(data.Large)
-	switch data.Type {
+func toOut(op *domain.Data) *pb.OperationResponse {
+	resp := &pb.OperationResponse{}
+	data := &pb.Data{}
+	data.SetId(op.ID.String())
+	data.SetName(op.Name)
+	data.SetVersion(op.Version)
+	data.SetData(op.Payload)
+	data.SetDataNonce(op.PayloadNonce)
+	data.SetDek(op.Dek)
+	data.SetDekNonce(op.DekNonce)
+	data.SetLarge(op.Large)
+	switch op.Type {
 	case domain.LoginPassType:
-		resp.SetType(pb.Data_LoginPass)
+		data.SetType(pb.Data_LoginPass)
 	case domain.TextType:
-		resp.SetType(pb.Data_Text)
+		data.SetType(pb.Data_Text)
 	case domain.BankCardType:
-		resp.SetType(pb.Data_BankCard)
+		data.SetType(pb.Data_BankCard)
 	case domain.OtherType:
-		resp.SetType(pb.Data_Other)
+		data.SetType(pb.Data_Other)
 	}
 	return resp
 }
