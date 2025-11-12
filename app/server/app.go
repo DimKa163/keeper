@@ -22,14 +22,14 @@ import (
 )
 
 type ServiceContainer struct {
-	DBPool              *pgxpool.Pool
-	UnitOfWork          domain.UnitOfWork
-	AuthService         auth.AuthService
-	AuthEngine          auth.Engine
-	UserService         domain.UserService
-	DataService         *usecase.DataService
-	UserRpcServer       *interfaces.UsersServer
-	StoredDataRpcServer *interfaces.DataServer
+	DBPool        *pgxpool.Pool
+	UnitOfWork    domain.UnitOfWork
+	AuthService   auth.AuthService
+	AuthEngine    auth.Engine
+	UserService   domain.UserService
+	DataService   *usecase.DataService
+	UserRpcServer *interfaces.UsersServer
+	DataRpcServer *interfaces.DataServer
 }
 
 type Server struct {
@@ -53,7 +53,6 @@ func NewServer(config *Config) (*Server, error) {
 
 func (server *Server) AddServices() error {
 	var err error
-
 	server.AuthEngine = addAuthEngine(server.Config)
 	server.ServerImpl = NewGRPCServer(server.listener, addGrpcServer(server.ServiceContainer), server.ServiceContainer)
 	server.DBPool, err = addPgPool(server.Database)
@@ -65,7 +64,7 @@ func (server *Server) AddServices() error {
 	server.UserService = addUserService(server.UnitOfWork, server.AuthService, server.AuthEngine)
 	server.UserRpcServer = interfaces.NewUserServer(server.UserService)
 	server.DataService = usecase.NewDataService(server.UnitOfWork)
-	server.StoredDataRpcServer = interfaces.NewDataServer(server.DataService)
+	server.DataRpcServer = interfaces.NewDataServer(server.DataService)
 	return nil
 }
 
@@ -172,7 +171,7 @@ func (gs *GRPCServer) ListenAndServe() error {
 
 func (gs *GRPCServer) Map() {
 	gs.services.UserRpcServer.Bind(gs.Server)
-	gs.services.StoredDataRpcServer.Bind(gs.Server)
+	gs.services.DataRpcServer.Bind(gs.Server)
 }
 
 func (gs *GRPCServer) Shutdown(ctx context.Context) error {

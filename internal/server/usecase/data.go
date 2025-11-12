@@ -10,18 +10,6 @@ import (
 	"github.com/beevik/guid"
 )
 
-type Data struct {
-	ID        guid.Guid
-	Name      string
-	Type      domain.StoredDataType
-	Large     bool
-	DekNonce  []byte
-	Dek       []byte
-	DataNonce []byte
-	Data      []byte
-	Version   int32
-}
-
 type DataService struct {
 	unitOfWork domain.UnitOfWork
 }
@@ -30,38 +18,10 @@ func NewDataService(uow domain.UnitOfWork) *DataService {
 	return &DataService{unitOfWork: uow}
 }
 
-func (ds *DataService) Upload(ctx context.Context, model *Data) (*Data, error) {
-	if err := ds.unitOfWork.Tx(ctx, func(ctx context.Context, work domain.UnitOfWork) error {
-		dataRepository := work.StoredDataRepository()
-		if err := ds.process(ctx, dataRepository, model); err != nil {
-			return err
-		}
-		return nil
-	}); err != nil {
-		return nil, err
-	}
-	dataRepository := ds.unitOfWork.StoredDataRepository()
-	exData, err := dataRepository.Get(ctx, model.ID)
-	if err != nil && !errors.Is(err, persistence.ErrResourceNotFound) {
-		return nil, err
-	}
-	return &Data{
-		ID:        exData.ID,
-		Name:      exData.Name,
-		Type:      exData.Type,
-		Large:     exData.Large,
-		DekNonce:  exData.DekNonce,
-		Dek:       exData.Dek,
-		DataNonce: exData.DataNonce,
-		Data:      exData.Data,
-		Version:   exData.Version,
-	}, nil
-}
-
-func (ds *DataService) BatchUpload(ctx context.Context, dataSlice []*Data) ([]*Data, error) {
+func (ds *DataService) Push(ctx context.Context, dataSlice []*domain.Operation) ([]*domain.Data, error) {
 	dataSlice = keepLast(dataSlice)
 	if err := ds.unitOfWork.Tx(ctx, func(ctx context.Context, work domain.UnitOfWork) error {
-		dataRepository := work.StoredDataRepository()
+		dataRepository := work.DataRepository()
 		for _, data := range dataSlice {
 			if err := ds.process(ctx, dataRepository, data); err != nil {
 				return err
@@ -71,47 +31,42 @@ func (ds *DataService) BatchUpload(ctx context.Context, dataSlice []*Data) ([]*D
 	}); err != nil {
 		return nil, err
 	}
-	dataRepository := ds.unitOfWork.StoredDataRepository()
-	resp := make([]*Data, len(dataSlice))
+	dataRepository := ds.unitOfWork.DataRepository()
+	resp := make([]*domain.Data, len(dataSlice))
 	for i, data := range dataSlice {
 		exData, err := dataRepository.Get(ctx, data.ID)
 		if err != nil {
 			return nil, err
 		}
-		resp[i] = &Data{
-			ID:        exData.ID,
-			Name:      exData.Name,
-			Type:      exData.Type,
-			Large:     exData.Large,
-			DekNonce:  exData.DekNonce,
-			Dek:       exData.Dek,
-			DataNonce: exData.DataNonce,
-			Data:      exData.Data,
-			Version:   exData.Version,
-		}
+		resp[i] = exData
 	}
 	return resp, nil
 }
 
-func (ds *DataService) Download(ctx context.Context) (*DataIterator, error) {
-	return NewDataIterator(ds.unitOfWork.StoredDataRepository(), 100), nil
+func (ds *DataService) GetIterator() domain.DataIterator {
+	return NewDataIterator(ds.unitOfWork.DataRepository(), 100)
 }
 
-func (ds *DataService) process(ctx context.Context, repository domain.StoredDataRepository, model *Data) error {
-	isNew := false
-	exData, err := repository.Get(ctx, model.ID)
-	if err != nil && !errors.Is(err, persistence.ErrResourceNotFound) {
-		return err
-	}
-	isNew = exData == nil
-	if !isNew {
+func (ds *DataService) process(ctx context.Context, repository domain.DataRepository, model *domain.Operation) error {
+	switch model.OperationType {
+	case domain.InsertOperation:
+		data := model.Data
+		err := repository.Insert(ctx, data)
+		if err != nil {
+			return err
+		}
+	case domain.UpdateOperation:
+		exData, err := repository.Get(ctx, model.Data.ID)
+		if err != nil && !errors.Is(err, persistence.ErrResourceNotFound) {
+			return err
+		}
 		if err = exData.Update(
 			model.Name,
 			model.Large,
 			model.DekNonce,
 			model.Dek,
-			model.DataNonce,
-			model.Data,
+			model.PayloadNonce,
+			model.Payload,
 			model.Version,
 		); err != nil {
 			return err
@@ -122,88 +77,82 @@ func (ds *DataService) process(ctx context.Context, repository domain.StoredData
 			return err
 		}
 		return nil
-	}
-	user, err := auth.User(ctx)
-	if err != nil {
-		return err
-	}
-	data := &domain.StoredData{
-		ID:        model.ID,
-		Name:      model.Name,
-		UserID:    user,
-		Type:      model.Type,
-		Large:     model.Large,
-		DekNonce:  model.DekNonce,
-		Dek:       model.Dek,
-		DataNonce: model.DataNonce,
-		Data:      model.Data,
-		Version:   model.Version,
-	}
-	err = repository.Insert(ctx, data)
-	if err != nil {
-		return err
+	case domain.DeleteOperation:
+		if err := repository.Delete(ctx, model.Data.ID); err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
-func keepLast(dataSlice []*Data) []*Data {
+func keepLast(dataSlice []*domain.Operation) []*domain.Operation {
 	seen := make(map[guid.Guid]bool)
-	result := make([]*Data, 0, len(dataSlice))
+	result := make([]*domain.Operation, 0, len(dataSlice))
 	for i := len(dataSlice) - 1; i >= 0; i-- {
 		v := dataSlice[i]
-		if seen[v.ID] {
+		if seen[v.Data.ID] {
 			continue
 		}
 		result = append(result, v)
-		seen[v.ID] = true
+		seen[v.Data.ID] = true
 	}
 	return result
 }
 
 type DataIterator struct {
-	repository domain.StoredDataRepository
-	items      []*domain.StoredData
+	repository domain.DataRepository
+	items      []*domain.Data
 	limit      int
 	offset     int
 	index      int
+	current    *domain.Data
 }
 
-func NewDataIterator(repository domain.StoredDataRepository, limit int) *DataIterator {
-	return &DataIterator{repository: repository, limit: limit}
+func NewDataIterator(repository domain.DataRepository, limit int) *DataIterator {
+	return &DataIterator{
+		repository: repository,
+		limit:      limit,
+		offset:     0,
+		current:    nil,
+		index:      0,
+	}
 }
 
-func (it *DataIterator) Next(ctx context.Context) (*Data, error) {
-	if it.items == nil || len(it.items) <= it.index {
-		if err := it.load(ctx); err != nil {
-			return nil, err
+func (di *DataIterator) MoveNext(ctx context.Context) (bool, error) {
+	if di.items == nil || len(di.items) <= di.index {
+		di.current = nil
+		if err := di.load(ctx); err != nil {
+			return false, err
 		}
 	}
-	item := it.items[it.index]
-	it.index++
-	return &Data{
-		ID:        item.ID,
-		Name:      item.Name,
-		Type:      item.Type,
-		Large:     item.Large,
-		DekNonce:  item.DekNonce,
-		Dek:       item.Dek,
-		DataNonce: item.DataNonce,
-		Data:      item.Data,
-		Version:   item.Version,
-	}, nil
+	if len(di.items) == 0 {
+		di.current = nil
+		return false, nil
+	}
+	di.current = di.items[di.index]
+	di.index += 1
+	return true, nil
 }
 
-func (it *DataIterator) load(ctx context.Context) error {
+func (di *DataIterator) Current() *domain.Data {
+	return di.current
+}
+
+func (di *DataIterator) load(ctx context.Context) error {
 	var err error
 	user, err := auth.User(ctx)
 	if err != nil {
 		return err
 	}
-	it.items, err = it.repository.GetAll(ctx, user, it.limit, it.offset)
+	all, err := di.repository.GetAll(ctx, user, di.limit, di.offset)
+	di.items = make([]*domain.Data, len(all))
+	for i, item := range all {
+		di.items[i] = item
+	}
 	if err != nil {
 		return err
 	}
-	it.offset = len(it.items)
-	it.index = 0
+	di.offset = len(di.items)
+	di.index = 0
 	return nil
 }

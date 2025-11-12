@@ -25,24 +25,34 @@ message Data {
   bytes data = 8;
   int32 version = 9;
 }
+enum OperationType {
+  Insert = 0;
+  Update = 1;
+  Delete = 2;
+}
 
-message UploadRequest {
+message Operation {
+  Data data = 1;
+  OperationType type = 2;
+}
+
+message PushRequest {
+  repeated Operation requests = 1;
+}
+
+message OperationResponse {
   Data data = 1;
 }
 
-message BatchUploadRequest {
-  repeated Data data = 1;
+message PushResponse {
+  repeated OperationResponse data = 1;
 }
 
-message UploadResponse {
-  Data data = 1;
-}
+message PollRequest {
 
-message BatchUploadResponse {
-  repeated Data data = 1;
 }
 
 service StoredData {
-  rpc Upload(UploadRequest) returns(UploadResponse);
-  rpc BatchUpload(BatchUploadRequest) returns(BatchUploadResponse);
+  rpc Push(PushRequest) returns(PushResponse);
+  rpc Poll(PollRequest) returns(stream Data);
 }
