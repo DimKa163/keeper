@@ -2,7 +2,7 @@
 
 package go;
 
-
+import "google/protobuf/timestamp.proto";
 import "google/protobuf/go_features.proto";
 option features.(pb.go).api_level = API_OPAQUE;
 
@@ -24,6 +24,7 @@ message Data {
   bytes data_nonce = 7;
   bytes data = 8;
   int32 version = 9;
+  bool deleted = 10;
 }
 enum OperationType {
   Insert = 0;
@@ -49,10 +50,14 @@ message PushResponse {
 }
 
 message PollRequest {
-
+  google.protobuf.Timestamp since = 1;
 }
 
-service StoredData {
+message PollResponse {
+  repeated Data data = 1;
+}
+
+service SyncData {
   rpc Push(PushRequest) returns(PushResponse);
-  rpc Poll(PollRequest) returns(stream Data);
+  rpc Poll(PollRequest) returns(PollResponse);
 }

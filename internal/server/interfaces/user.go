@@ -4,8 +4,9 @@ import (
 	"context"
 	"errors"
 
+	"github.com/DimKa163/keeper/internal/pb"
+
 	"github.com/DimKa163/keeper/internal/server/domain"
-	"github.com/DimKa163/keeper/internal/server/interfaces/pb"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

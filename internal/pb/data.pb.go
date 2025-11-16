@@ -10,6 +10,7 @@ import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	_ "google.golang.org/protobuf/types/gofeaturespb"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	unsafe "unsafe"
 )
@@ -123,6 +124,7 @@ type Data struct {
 	xxx_hidden_DataNonce   []byte                 `protobuf:"bytes,7,opt,name=data_nonce,json=dataNonce"`
 	xxx_hidden_Data        []byte                 `protobuf:"bytes,8,opt,name=data"`
 	xxx_hidden_Version     int32                  `protobuf:"varint,9,opt,name=version"`
+	xxx_hidden_Deleted     bool                   `protobuf:"varint,10,opt,name=deleted"`
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -225,24 +227,31 @@ func (x *Data) GetVersion() int32 {
 	return 0
 }
 
+func (x *Data) GetDeleted() bool {
+	if x != nil {
+		return x.xxx_hidden_Deleted
+	}
+	return false
+}
+
 func (x *Data) SetId(v string) {
 	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 9)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 10)
 }
 
 func (x *Data) SetName(v string) {
 	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 9)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 10)
 }
 
 func (x *Data) SetType(v Data_DataType) {
 	x.xxx_hidden_Type = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 9)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 10)
 }
 
 func (x *Data) SetLarge(v bool) {
 	x.xxx_hidden_Large = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 9)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 10)
 }
 
 func (x *Data) SetDekNonce(v []byte) {
@@ -250,7 +259,7 @@ func (x *Data) SetDekNonce(v []byte) {
 		v = []byte{}
 	}
 	x.xxx_hidden_DekNonce = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 9)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 10)
 }
 
 func (x *Data) SetDek(v []byte) {
@@ -258,7 +267,7 @@ func (x *Data) SetDek(v []byte) {
 		v = []byte{}
 	}
 	x.xxx_hidden_Dek = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 9)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 10)
 }
 
 func (x *Data) SetDataNonce(v []byte) {
@@ -266,7 +275,7 @@ func (x *Data) SetDataNonce(v []byte) {
 		v = []byte{}
 	}
 	x.xxx_hidden_DataNonce = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 9)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 10)
 }
 
 func (x *Data) SetData(v []byte) {
@@ -274,12 +283,17 @@ func (x *Data) SetData(v []byte) {
 		v = []byte{}
 	}
 	x.xxx_hidden_Data = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 9)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 10)
 }
 
 func (x *Data) SetVersion(v int32) {
 	x.xxx_hidden_Version = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 9)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 10)
+}
+
+func (x *Data) SetDeleted(v bool) {
+	x.xxx_hidden_Deleted = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 9, 10)
 }
 
 func (x *Data) HasId() bool {
@@ -345,6 +359,13 @@ func (x *Data) HasVersion() bool {
 	return protoimpl.X.Present(&(x.XXX_presence[0]), 8)
 }
 
+func (x *Data) HasDeleted() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 9)
+}
+
 func (x *Data) ClearId() {
 	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
 	x.xxx_hidden_Id = nil
@@ -390,6 +411,11 @@ func (x *Data) ClearVersion() {
 	x.xxx_hidden_Version = 0
 }
 
+func (x *Data) ClearDeleted() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 9)
+	x.xxx_hidden_Deleted = false
+}
+
 type Data_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
@@ -402,6 +428,7 @@ type Data_builder struct {
 	DataNonce []byte
 	Data      []byte
 	Version   *int32
+	Deleted   *bool
 }
 
 func (b0 Data_builder) Build() *Data {
@@ -409,40 +436,44 @@ func (b0 Data_builder) Build() *Data {
 	b, x := &b0, m0
 	_, _ = b, x
 	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 9)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 10)
 		x.xxx_hidden_Id = b.Id
 	}
 	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 9)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 10)
 		x.xxx_hidden_Name = b.Name
 	}
 	if b.Type != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 9)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 10)
 		x.xxx_hidden_Type = *b.Type
 	}
 	if b.Large != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 9)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 10)
 		x.xxx_hidden_Large = *b.Large
 	}
 	if b.DekNonce != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 9)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 10)
 		x.xxx_hidden_DekNonce = b.DekNonce
 	}
 	if b.Dek != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 9)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 10)
 		x.xxx_hidden_Dek = b.Dek
 	}
 	if b.DataNonce != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 9)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 10)
 		x.xxx_hidden_DataNonce = b.DataNonce
 	}
 	if b.Data != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 9)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 10)
 		x.xxx_hidden_Data = b.Data
 	}
 	if b.Version != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 9)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 10)
 		x.xxx_hidden_Version = *b.Version
+	}
+	if b.Deleted != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 10)
+		x.xxx_hidden_Deleted = *b.Deleted
 	}
 	return m0
 }
@@ -736,9 +767,10 @@ func (b0 PushResponse_builder) Build() *PushResponse {
 }
 
 type PollRequest struct {
-	state         protoimpl.MessageState `protogen:"opaque.v1"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state            protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Since *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=since"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *PollRequest) Reset() {
@@ -766,15 +798,98 @@ func (x *PollRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
+func (x *PollRequest) GetSince() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_Since
+	}
+	return nil
+}
+
+func (x *PollRequest) SetSince(v *timestamppb.Timestamp) {
+	x.xxx_hidden_Since = v
+}
+
+func (x *PollRequest) HasSince() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Since != nil
+}
+
+func (x *PollRequest) ClearSince() {
+	x.xxx_hidden_Since = nil
+}
+
 type PollRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
+	Since *timestamppb.Timestamp
 }
 
 func (b0 PollRequest_builder) Build() *PollRequest {
 	m0 := &PollRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
+	x.xxx_hidden_Since = b.Since
+	return m0
+}
+
+type PollResponse struct {
+	state           protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Data *[]*Data               `protobuf:"bytes,1,rep,name=data"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *PollResponse) Reset() {
+	*x = PollResponse{}
+	mi := &file_app_api_proto_data_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PollResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PollResponse) ProtoMessage() {}
+
+func (x *PollResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_app_api_proto_data_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *PollResponse) GetData() []*Data {
+	if x != nil {
+		if x.xxx_hidden_Data != nil {
+			return *x.xxx_hidden_Data
+		}
+	}
+	return nil
+}
+
+func (x *PollResponse) SetData(v []*Data) {
+	x.xxx_hidden_Data = &v
+}
+
+type PollResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Data []*Data
+}
+
+func (b0 PollResponse_builder) Build() *PollResponse {
+	m0 := &PollResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Data = &b.Data
 	return m0
 }
 
@@ -782,7 +897,7 @@ var File_app_api_proto_data_proto protoreflect.FileDescriptor
 
 const file_app_api_proto_data_proto_rawDesc = "" +
 	"\n" +
-	"\x18app/api/proto/data.proto\x12\x02go\x1a!google/protobuf/go_features.proto\"\xa1\x02\n" +
+	"\x18app/api/proto/data.proto\x12\x02go\x1a\x1fgoogle/protobuf/timestamp.proto\x1a!google/protobuf/go_features.proto\"\xbb\x02\n" +
 	"\x04Data\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12%\n" +
@@ -793,7 +908,9 @@ const file_app_api_proto_data_proto_rawDesc = "" +
 	"\n" +
 	"data_nonce\x18\a \x01(\fR\tdataNonce\x12\x12\n" +
 	"\x04data\x18\b \x01(\fR\x04data\x12\x18\n" +
-	"\aversion\x18\t \x01(\x05R\aversion\"<\n" +
+	"\aversion\x18\t \x01(\x05R\aversion\x12\x18\n" +
+	"\adeleted\x18\n" +
+	" \x01(\bR\adeleted\"<\n" +
 	"\bDataType\x12\r\n" +
 	"\tLoginPass\x10\x00\x12\b\n" +
 	"\x04Text\x10\x01\x12\f\n" +
@@ -807,48 +924,54 @@ const file_app_api_proto_data_proto_rawDesc = "" +
 	"\x11OperationResponse\x12\x1c\n" +
 	"\x04data\x18\x01 \x01(\v2\b.go.DataR\x04data\"9\n" +
 	"\fPushResponse\x12)\n" +
-	"\x04data\x18\x01 \x03(\v2\x15.go.OperationResponseR\x04data\"\r\n" +
-	"\vPollRequest*3\n" +
+	"\x04data\x18\x01 \x03(\v2\x15.go.OperationResponseR\x04data\"?\n" +
+	"\vPollRequest\x120\n" +
+	"\x05since\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x05since\",\n" +
+	"\fPollResponse\x12\x1c\n" +
+	"\x04data\x18\x01 \x03(\v2\b.go.DataR\x04data*3\n" +
 	"\rOperationType\x12\n" +
 	"\n" +
 	"\x06Insert\x10\x00\x12\n" +
 	"\n" +
 	"\x06Update\x10\x01\x12\n" +
 	"\n" +
-	"\x06Delete\x10\x022\\\n" +
-	"\n" +
-	"StoredData\x12)\n" +
-	"\x04Push\x12\x0f.go.PushRequest\x1a\x10.go.PushResponse\x12#\n" +
-	"\x04Poll\x12\x0f.go.PollRequest\x1a\b.go.Data0\x01B\rZ\x03/pb\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"\x06Delete\x10\x022`\n" +
+	"\bSyncData\x12)\n" +
+	"\x04Push\x12\x0f.go.PushRequest\x1a\x10.go.PushResponse\x12)\n" +
+	"\x04Poll\x12\x0f.go.PollRequest\x1a\x10.go.PollResponseB\rZ\x03/pb\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_app_api_proto_data_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_app_api_proto_data_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_app_api_proto_data_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_app_api_proto_data_proto_goTypes = []any{
-	(OperationType)(0),        // 0: go.OperationType
-	(Data_DataType)(0),        // 1: go.Data.DataType
-	(*Data)(nil),              // 2: go.Data
-	(*Operation)(nil),         // 3: go.Operation
-	(*PushRequest)(nil),       // 4: go.PushRequest
-	(*OperationResponse)(nil), // 5: go.OperationResponse
-	(*PushResponse)(nil),      // 6: go.PushResponse
-	(*PollRequest)(nil),       // 7: go.PollRequest
+	(OperationType)(0),            // 0: go.OperationType
+	(Data_DataType)(0),            // 1: go.Data.DataType
+	(*Data)(nil),                  // 2: go.Data
+	(*Operation)(nil),             // 3: go.Operation
+	(*PushRequest)(nil),           // 4: go.PushRequest
+	(*OperationResponse)(nil),     // 5: go.OperationResponse
+	(*PushResponse)(nil),          // 6: go.PushResponse
+	(*PollRequest)(nil),           // 7: go.PollRequest
+	(*PollResponse)(nil),          // 8: go.PollResponse
+	(*timestamppb.Timestamp)(nil), // 9: google.protobuf.Timestamp
 }
 var file_app_api_proto_data_proto_depIdxs = []int32{
-	1, // 0: go.Data.type:type_name -> go.Data.DataType
-	2, // 1: go.Operation.data:type_name -> go.Data
-	0, // 2: go.Operation.type:type_name -> go.OperationType
-	3, // 3: go.PushRequest.requests:type_name -> go.Operation
-	2, // 4: go.OperationResponse.data:type_name -> go.Data
-	5, // 5: go.PushResponse.data:type_name -> go.OperationResponse
-	4, // 6: go.StoredData.Push:input_type -> go.PushRequest
-	7, // 7: go.StoredData.Poll:input_type -> go.PollRequest
-	6, // 8: go.StoredData.Push:output_type -> go.PushResponse
-	2, // 9: go.StoredData.Poll:output_type -> go.Data
-	8, // [8:10] is the sub-list for method output_type
-	6, // [6:8] is the sub-list for method input_type
-	6, // [6:6] is the sub-list for extension type_name
-	6, // [6:6] is the sub-list for extension extendee
-	0, // [0:6] is the sub-list for field type_name
+	1,  // 0: go.Data.type:type_name -> go.Data.DataType
+	2,  // 1: go.Operation.data:type_name -> go.Data
+	0,  // 2: go.Operation.type:type_name -> go.OperationType
+	3,  // 3: go.PushRequest.requests:type_name -> go.Operation
+	2,  // 4: go.OperationResponse.data:type_name -> go.Data
+	5,  // 5: go.PushResponse.data:type_name -> go.OperationResponse
+	9,  // 6: go.PollRequest.since:type_name -> google.protobuf.Timestamp
+	2,  // 7: go.PollResponse.data:type_name -> go.Data
+	4,  // 8: go.SyncData.Push:input_type -> go.PushRequest
+	7,  // 9: go.SyncData.Poll:input_type -> go.PollRequest
+	6,  // 10: go.SyncData.Push:output_type -> go.PushResponse
+	8,  // 11: go.SyncData.Poll:output_type -> go.PollResponse
+	10, // [10:12] is the sub-list for method output_type
+	8,  // [8:10] is the sub-list for method input_type
+	8,  // [8:8] is the sub-list for extension type_name
+	8,  // [8:8] is the sub-list for extension extendee
+	0,  // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_app_api_proto_data_proto_init() }
@@ -862,7 +985,7 @@ func file_app_api_proto_data_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_app_api_proto_data_proto_rawDesc), len(file_app_api_proto_data_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   6,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

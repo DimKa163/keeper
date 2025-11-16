@@ -82,7 +82,7 @@ func (server *Server) Map() {
 }
 
 func (server *Server) Migrate() error {
-	return persistence.Migrate(server.DBPool, "migrations")
+	return persistence.Migrate(server.DBPool, "./internal/server/migrations")
 }
 
 func (server *Server) MigrateFrom(path string) error {

@@ -4,7 +4,7 @@ import (
 	"crypto/rand"
 	"errors"
 
-	"golang.org/x/crypto/argon2"
+	shared "github.com/DimKa163/keeper/internal/shared"
 )
 
 var ErrInvalidPassword = errors.New("invalid password")
@@ -36,13 +36,13 @@ func NewAuthService(config *ArgonConfig) AuthService {
 }
 
 func (a *authService) GenerateHash(password []byte) (pwd, salt []byte, err error) {
-	salt, err = a.GenerateSalt()
+	salt, err = shared.GenerateSalt()
 	if err != nil {
 		pwd = nil
 		salt = nil
 		return
 	}
-	pwd = a.hash(password, salt)
+	pwd = shared.Hash(password, salt, a.Iterations, a.Memory, a.KeyLength, uint8(a.Parallelism))
 	return
 }
 
@@ -52,24 +52,9 @@ func (a *authService) GenerateSalt() ([]byte, error) {
 	return salt, err
 }
 func (a *authService) Authenticate(password, hashedPassword, salt []byte) error {
-	candidateHash := a.hash(password, salt)
-	if !a.compare(hashedPassword, candidateHash) {
+	candidateHash := shared.Hash(password, salt, a.Iterations, a.Memory, a.KeyLength, uint8(a.Parallelism))
+	if !shared.Compare(hashedPassword, candidateHash) {
 		return ErrInvalidPassword
 	}
 	return nil
-}
-
-func (a *authService) hash(pwd []byte, salt []byte) []byte {
-	return argon2.IDKey(pwd, salt, a.Iterations, a.Memory, uint8(a.Parallelism), a.KeyLength)
-}
-
-func (a *authService) compare(b, c []byte) bool {
-	if len(b) != len(c) {
-		return false
-	}
-	var result byte
-	for i := range b {
-		result |= b[i] ^ c[i]
-	}
-	return result == 0
 }

@@ -7,6 +7,7 @@ END $$;
 CREATE TABLE IF NOT EXISTS data(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    modified_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     name TEXT,
     user_id UUID NOT NULL,
     large boolean,
@@ -15,6 +16,7 @@ CREATE TABLE IF NOT EXISTS data(
     payload_nonce BYTEA,
     dek BYTEA,
     dek_nonce BYTEA,
-    version INT
+    version INT,
+    deleted boolean
 );
 

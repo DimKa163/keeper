@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/DimKa163/keeper/internal/server/domain"
 	"github.com/DimKa163/keeper/internal/server/infrastructure/persistence"
@@ -43,8 +44,17 @@ func (ds *DataService) Push(ctx context.Context, dataSlice []*domain.Operation) 
 	return resp, nil
 }
 
-func (ds *DataService) GetIterator() domain.DataIterator {
-	return NewDataIterator(ds.unitOfWork.DataRepository(), 100)
+func (ds *DataService) Poll(ctx context.Context, since time.Time) ([]*domain.Data, error) {
+	user, err := auth.User(ctx)
+	if err != nil {
+		return nil, err
+	}
+	rep := ds.unitOfWork.DataRepository()
+	data, err := rep.GetAll(ctx, user, since)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
 }
 
 func (ds *DataService) process(ctx context.Context, repository domain.DataRepository, model *domain.Operation) error {
@@ -78,7 +88,9 @@ func (ds *DataService) process(ctx context.Context, repository domain.DataReposi
 		}
 		return nil
 	case domain.DeleteOperation:
-		if err := repository.Delete(ctx, model.Data.ID); err != nil {
+		model.Deleted = true
+		model.UpVersion()
+		if err := repository.Delete(ctx, model.Data); err != nil {
 			return err
 		}
 	}
@@ -97,62 +109,4 @@ func keepLast(dataSlice []*domain.Operation) []*domain.Operation {
 		seen[v.Data.ID] = true
 	}
 	return result
-}
-
-type DataIterator struct {
-	repository domain.DataRepository
-	items      []*domain.Data
-	limit      int
-	offset     int
-	index      int
-	current    *domain.Data
-}
-
-func NewDataIterator(repository domain.DataRepository, limit int) *DataIterator {
-	return &DataIterator{
-		repository: repository,
-		limit:      limit,
-		offset:     0,
-		current:    nil,
-		index:      0,
-	}
-}
-
-func (di *DataIterator) MoveNext(ctx context.Context) (bool, error) {
-	if di.items == nil || len(di.items) <= di.index {
-		di.current = nil
-		if err := di.load(ctx); err != nil {
-			return false, err
-		}
-	}
-	if len(di.items) == 0 {
-		di.current = nil
-		return false, nil
-	}
-	di.current = di.items[di.index]
-	di.index += 1
-	return true, nil
-}
-
-func (di *DataIterator) Current() *domain.Data {
-	return di.current
-}
-
-func (di *DataIterator) load(ctx context.Context) error {
-	var err error
-	user, err := auth.User(ctx)
-	if err != nil {
-		return err
-	}
-	all, err := di.repository.GetAll(ctx, user, di.limit, di.offset)
-	di.items = make([]*domain.Data, len(all))
-	for i, item := range all {
-		di.items[i] = item
-	}
-	if err != nil {
-		return err
-	}
-	di.offset = len(di.items)
-	di.index = 0
-	return nil
 }
