@@ -40,6 +40,7 @@ func (d DataType) String() string {
 type Data struct {
 	ID           guid.Guid
 	CreatedAt    time.Time
+	ModifiedAt   time.Time
 	Name         string
 	UserID       guid.Guid
 	Type         DataType
@@ -49,12 +50,14 @@ type Data struct {
 	PayloadNonce []byte
 	Payload      []byte
 	Version      int32
+	Deleted      bool
 }
 
 func (sd *Data) Update(name string, large bool, dekNonce, dek, dataNonce, data []byte, version int32) error {
 	if version != sd.Version {
 		return ErrDataConflict
 	}
+	sd.ModifiedAt = time.Now()
 	sd.Name = name
 	sd.Large = large
 	sd.DekNonce = dekNonce
@@ -77,10 +80,10 @@ type FilePart struct {
 
 type DataRepository interface {
 	Get(ctx context.Context, id guid.Guid) (*Data, error)
-	GetAll(ctx context.Context, userID guid.Guid, limit, skip int) ([]*Data, error)
+	GetAll(ctx context.Context, userID guid.Guid, greaterThan time.Time) ([]*Data, error)
 	Insert(ctx context.Context, data *Data) error
 	Update(ctx context.Context, data *Data) error
-	Delete(ctx context.Context, id guid.Guid) error
+	Delete(ctx context.Context, data *Data) error
 }
 
 type FilePartRepository interface {
@@ -88,9 +91,9 @@ type FilePartRepository interface {
 }
 
 type DataService interface {
-	Push(ctx context.Context, data []*Operation) ([]Data, error)
+	Push(ctx context.Context, data []*Operation) ([]*Data, error)
 
-	GetIterator() DataIterator
+	Poll(ctx context.Context, since time.Time) ([]*Data, error)
 }
 
 type Operation struct {

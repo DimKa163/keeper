@@ -12,8 +12,8 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
+	"github.com/DimKa163/keeper/internal/pb"
 	"github.com/DimKa163/keeper/internal/server/domain"
-	"github.com/DimKa163/keeper/internal/server/interfaces/pb"
 	"github.com/stretchr/testify/assert"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
@@ -199,7 +199,7 @@ func configureServer(t *testing.T, serv *services, config *server2.Config) error
 	if err := srv.AddLogging(); err != nil {
 		return err
 	}
-	if err := srv.MigrateFrom("../migrations"); err != nil {
+	if err := srv.MigrateFrom("../internal/server/migrations"); err != nil {
 		return err
 	}
 	go func() {
@@ -235,7 +235,7 @@ func configureClient(t *testing.T, serv *services, addr, login, pass string) err
 	serv.interceptor = newInterceptor(serv.UsersClient, login, pass)
 	protectedConn, err := grpc.NewClient(addr,
 		grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithChainUnaryInterceptor(serv.interceptor.Handle()))
-	serv.DataClient = pb.NewStoredDataClient(protectedConn)
+	serv.DataClient = pb.NewSyncDataClient(protectedConn)
 	return err
 }
 
@@ -294,5 +294,5 @@ type services struct {
 	*server2.Server
 	interceptor *unaryIdentifyInterceptor
 	UsersClient pb.UsersClient
-	DataClient  pb.StoredDataClient
+	DataClient  pb.SyncDataClient
 }

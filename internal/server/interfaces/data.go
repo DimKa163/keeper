@@ -3,10 +3,10 @@ package interfaces
 import (
 	"context"
 	"errors"
-	"github.com/DimKa163/keeper/internal/server/shared/auth"
 
+	"github.com/DimKa163/keeper/internal/pb"
 	"github.com/DimKa163/keeper/internal/server/domain"
-	"github.com/DimKa163/keeper/internal/server/interfaces/pb"
+	"github.com/DimKa163/keeper/internal/server/shared/auth"
 	"github.com/DimKa163/keeper/internal/server/usecase"
 	"github.com/beevik/guid"
 	"google.golang.org/grpc"
@@ -16,7 +16,7 @@ import (
 
 type DataServer struct {
 	app *usecase.DataService
-	pb.UnimplementedStoredDataServer
+	pb.UnimplementedSyncDataServer
 }
 
 func NewDataServer(app *usecase.DataService) *DataServer {
@@ -24,7 +24,7 @@ func NewDataServer(app *usecase.DataService) *DataServer {
 }
 
 func (ds *DataServer) Bind(server *grpc.Server) {
-	pb.RegisterStoredDataServer(server, ds)
+	pb.RegisterSyncDataServer(server, ds)
 }
 func (ds *DataServer) Push(ctx context.Context, request *pb.PushRequest) (*pb.PushResponse, error) {
 	var response pb.PushResponse
@@ -57,25 +57,18 @@ func (ds *DataServer) Push(ctx context.Context, request *pb.PushRequest) (*pb.Pu
 	return &response, nil
 }
 
-func (ds *DataServer) Poll(_ *pb.PollRequest, srv pb.StoredData_PollServer) error {
-	iterator := ds.app.GetIterator()
-	next, err := iterator.MoveNext(srv.Context())
+func (ds *DataServer) Poll(ctx context.Context, request *pb.PollRequest) (*pb.PollResponse, error) {
+	var response pb.PollResponse
+	data, err := ds.app.Poll(ctx, request.GetSince().AsTime())
 	if err != nil {
-		return status.Error(codes.Internal, err.Error())
+		return nil, status.Error(codes.Internal, err.Error())
 	}
-
-	for next {
-		it := iterator.Current()
-		resp := toOut(it)
-		if err := srv.Send(resp.GetData()); err != nil {
-			return status.Error(codes.Internal, err.Error())
-		}
-		next, err = iterator.MoveNext(srv.Context())
-		if err != nil {
-			return status.Error(codes.Internal, err.Error())
-		}
+	pbData := make([]*pb.Data, len(data))
+	for i, d := range data {
+		pbData[i] = toOut(d).GetData()
 	}
-	return nil
+	response.SetData(pbData)
+	return &response, nil
 }
 
 func validateBatchUploadRequest(req *pb.PushRequest) error {
