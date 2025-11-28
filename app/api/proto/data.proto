@@ -2,7 +2,6 @@
 
 package go;
 
-import "google/protobuf/timestamp.proto";
 import "google/protobuf/go_features.proto";
 option features.(pb.go).api_level = API_OPAQUE;
 
@@ -23,41 +22,52 @@ message Data {
   bytes dek = 6;
   bytes data_nonce = 7;
   bytes data = 8;
-  int32 version = 9;
-  bool deleted = 10;
-}
-enum OperationType {
-  Insert = 0;
-  Update = 1;
-  Delete = 2;
+  bytes file_data_nonce = 9;
+  int32 version = 10;
+  bool deleted = 11;
 }
 
-message Operation {
-  Data data = 1;
-  OperationType type = 2;
+enum RequestType{
+  Default = 0;
+  StartData = 1;
+  FilePart = 2;
+  EndData = 3;
+  ErrData = 4;
 }
 
 message PushRequest {
-  repeated Operation requests = 1;
-}
-
-message OperationResponse {
-  Data data = 1;
-}
-
-message PushResponse {
-  repeated OperationResponse data = 1;
-}
-
-message PollRequest {
-  google.protobuf.Timestamp since = 1;
-}
-
-message PollResponse {
   repeated Data data = 1;
 }
 
+message Push{
+  Data data = 1;
+  RequestType type = 2;
+  bytes chunk = 3;
+}
+
+message PushResponse {
+  bool success = 1;
+}
+
+message PollRequest {
+  int32 since = 1;
+}
+
+message PollResponse {
+  int32 server_version = 1;
+  repeated Data data = 2;
+}
+
+message Poll {
+  int32 server_version = 1;
+  RequestType type = 2;
+  Data data = 3;
+  bytes chunk = 4;
+}
+
 service SyncData {
-  rpc Push(PushRequest) returns(PushResponse);
-  rpc Poll(PollRequest) returns(PollResponse);
+  rpc PushUnary(PushRequest) returns(PushResponse);
+  rpc PushStream(stream Push) returns(PushResponse);
+  rpc PollUnary(PollRequest) returns(PollResponse);
+  rpc PollStream(PollRequest) returns(stream Poll);
 }

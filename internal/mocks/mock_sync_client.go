@@ -63,7 +63,7 @@ func (m *MockSyncDataClient) Push(ctx context.Context, in *pb.PushRequest, opts 
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "Push", varargs...)
+	ret := m.ctrl.Call(m, "push", varargs...)
 	ret0, _ := ret[0].(*pb.PushResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
@@ -73,7 +73,7 @@ func (m *MockSyncDataClient) Push(ctx context.Context, in *pb.PushRequest, opts 
 func (mr *MockSyncDataClientMockRecorder) Push(ctx, in interface{}, opts ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, in}, opts...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Push", reflect.TypeOf((*MockSyncDataClient)(nil).Push), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "push", reflect.TypeOf((*MockSyncDataClient)(nil).Push), varargs...)
 }
 
 // MockSyncDataServer is a mock of SyncDataServer interface.
@@ -117,7 +117,7 @@ func (mr *MockSyncDataServerMockRecorder) Poll(arg0, arg1 interface{}) *gomock.C
 // Push mocks base method.
 func (m *MockSyncDataServer) Push(arg0 context.Context, arg1 *pb.PushRequest) (*pb.PushResponse, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Push", arg0, arg1)
+	ret := m.ctrl.Call(m, "push", arg0, arg1)
 	ret0, _ := ret[0].(*pb.PushResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
@@ -126,7 +126,7 @@ func (m *MockSyncDataServer) Push(arg0 context.Context, arg1 *pb.PushRequest) (*
 // Push indicates an expected call of Push.
 func (mr *MockSyncDataServerMockRecorder) Push(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Push", reflect.TypeOf((*MockSyncDataServer)(nil).Push), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "push", reflect.TypeOf((*MockSyncDataServer)(nil).Push), arg0, arg1)
 }
 
 // mustEmbedUnimplementedSyncDataServer mocks base method.

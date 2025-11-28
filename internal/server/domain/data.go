@@ -3,6 +3,8 @@ package domain
 import (
 	"context"
 	"errors"
+	"fmt"
+	"os"
 	"time"
 
 	"github.com/beevik/guid"
@@ -38,70 +40,56 @@ func (d DataType) String() string {
 }
 
 type Data struct {
-	ID           guid.Guid
-	CreatedAt    time.Time
-	ModifiedAt   time.Time
-	Name         string
-	UserID       guid.Guid
-	Type         DataType
-	Large        bool
-	DekNonce     []byte
-	Dek          []byte
-	PayloadNonce []byte
-	Payload      []byte
-	Version      int32
-	Deleted      bool
+	ID            guid.Guid
+	CreatedAt     time.Time
+	ModifiedAt    time.Time
+	UserID        guid.Guid
+	Type          DataType
+	BigData       bool
+	DekNonce      []byte
+	Dek           []byte
+	PayloadNonce  []byte
+	Payload       []byte
+	FileDataNonce []byte
+	Path          string
+	Version       int32
+	Deleted       bool
 }
 
-func (sd *Data) Update(name string, large bool, dekNonce, dek, dataNonce, data []byte, version int32) error {
-	if version != sd.Version {
-		return ErrDataConflict
-	}
+func (sd *Data) Update(large bool, dekNonce, dek, dataNonce, data, fileData []byte, deleted bool, version int32) {
 	sd.ModifiedAt = time.Now()
-	sd.Name = name
-	sd.Large = large
+	sd.BigData = large
 	sd.DekNonce = dekNonce
 	sd.Dek = dek
 	sd.PayloadNonce = dataNonce
 	sd.Payload = data
-	return nil
+	sd.FileDataNonce = fileData
+	sd.Deleted = deleted
+	sd.Version = version
 }
 
-func (sd *Data) UpVersion() {
-	sd.Version += 1
-}
-
-type FilePart struct {
-	ID     guid.Guid
-	DataID int64
-	Path   string
-	Nonce  []byte
+func (sd *Data) File() (*os.File, error) {
+	return os.Open(fmt.Sprintf("%s_%d", sd.Path, sd.Version))
 }
 
 type DataRepository interface {
 	Get(ctx context.Context, id guid.Guid) (*Data, error)
-	GetAll(ctx context.Context, userID guid.Guid, greaterThan time.Time) ([]*Data, error)
+	GetAll(ctx context.Context, userID guid.Guid, greaterThan int32) ([]*Data, error)
 	Insert(ctx context.Context, data *Data) error
 	Update(ctx context.Context, data *Data) error
 	Delete(ctx context.Context, data *Data) error
 }
 
-type FilePartRepository interface {
-	Get(ctx context.Context, dataID int64) ([]*FilePart, error)
-}
-
 type DataService interface {
-	Push(ctx context.Context, data []*Operation) ([]*Data, error)
+	PushUnary(ctx context.Context, data *Data) error
 
-	Poll(ctx context.Context, since time.Time) ([]*Data, error)
-}
+	PushMetadata(ctx context.Context, data *Data) error
 
-type Operation struct {
-	*Data
-	OperationType OperationType
-}
+	PushData(ctx context.Context, id guid.Guid, data []byte) error
 
-type DataIterator interface {
-	Current() *Data
-	MoveNext(ctx context.Context) (bool, error)
+	Finish(ctx context.Context, id guid.Guid) error
+
+	Push(ctx context.Context, data []*Data) error
+
+	Poll(ctx context.Context, since int32) ([]*Data, int32, error)
 }

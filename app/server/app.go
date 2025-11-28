@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"github.com/DimKa163/keeper/internal/shared"
 	"net"
 	"os/signal"
 	"syscall"
@@ -30,6 +31,7 @@ type ServiceContainer struct {
 	DataService   *usecase.DataService
 	UserRpcServer *interfaces.UsersServer
 	DataRpcServer *interfaces.DataServer
+	HealthServer  *interfaces.HealthService
 }
 
 type Server struct {
@@ -53,17 +55,18 @@ func NewServer(config *Config) (*Server, error) {
 
 func (server *Server) AddServices() error {
 	var err error
-	server.AuthEngine = addAuthEngine(server.Config)
-	server.ServerImpl = NewGRPCServer(server.listener, addGrpcServer(server.ServiceContainer), server.ServiceContainer)
 	server.DBPool, err = addPgPool(server.Database)
 	if err != nil {
 		return err
 	}
+	server.HealthServer = interfaces.NewHealthService(server.DBPool)
+	server.AuthEngine = addAuthEngine(server.Config)
+	server.ServerImpl = NewGRPCServer(server.listener, addGrpcServer(server.ServiceContainer), server.ServiceContainer)
 	server.UnitOfWork = addUnitOfWork(server.DBPool)
 	server.AuthService = addAuthService(server.Config)
 	server.UserService = addUserService(server.UnitOfWork, server.AuthService, server.AuthEngine)
 	server.UserRpcServer = interfaces.NewUserServer(server.UserService)
-	server.DataService = usecase.NewDataService(server.UnitOfWork)
+	server.DataService = usecase.NewDataService(server.UnitOfWork, shared.NewFileProvider(server.FilePath))
 	server.DataRpcServer = interfaces.NewDataServer(server.DataService)
 	return nil
 }
@@ -71,7 +74,6 @@ func (server *Server) AddServices() error {
 func (server *Server) AddLogging() error {
 	return logging.InitializeLogging(&logging.LogConfiguration{
 		Builders: map[string]logging.CoreBuilder{
-			"file":    logging.NewFileBuilder("D:\\logs\\keeper.log", zap.NewProductionEncoderConfig(), zapcore.InfoLevel),
 			"console": logging.NewConsoleBuilder(zap.NewDevelopmentEncoderConfig(), zapcore.DebugLevel),
 		},
 	})
@@ -92,7 +94,9 @@ func (server *Server) MigrateFrom(path string) error {
 func (server *Server) Run() error {
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	defer cancel()
-
+	////if err := persistence.Migrate(server.DBPool, "./internal/server/migrations"); err != nil {
+	//	return err
+	//}
 	go func() {
 		<-ctx.Done()
 		timeoutCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
@@ -115,11 +119,15 @@ func addUnitOfWork(pool *pgxpool.Pool) domain.UnitOfWork {
 }
 func addGrpcServer(container *ServiceContainer) *grpc.Server {
 	chain := make([]grpc.UnaryServerInterceptor, 0)
+	chain = append(chain, interfaces.UnaryLoggingInterceptor())
 	skip := make(map[string]bool)
 	skip["/go.Users/Login"] = true
 	skip["/go.Users/Register"] = true
+	skip["/go.HealthService/Check"] = true
 	chain = append(chain, interfaces.UnaryIdentifyInterceptor(container.AuthEngine, skip))
-	return grpc.NewServer(grpc.ChainUnaryInterceptor(chain...))
+	streamChain := make([]grpc.StreamServerInterceptor, 0)
+	streamChain = append(streamChain, interfaces.StreamIdentifyInterceptor(container.AuthEngine))
+	return grpc.NewServer(grpc.ChainUnaryInterceptor(chain...), grpc.ChainStreamInterceptor(streamChain...))
 }
 
 func addAuthService(config *Config) auth.AuthService {
@@ -170,6 +178,7 @@ func (gs *GRPCServer) ListenAndServe() error {
 }
 
 func (gs *GRPCServer) Map() {
+	gs.services.HealthServer.Bind(gs.Server)
 	gs.services.UserRpcServer.Bind(gs.Server)
 	gs.services.DataRpcServer.Bind(gs.Server)
 }

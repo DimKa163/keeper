@@ -47,23 +47,37 @@ func (us *UserService) Login(ctx context.Context, login, password string) (strin
 }
 
 func (us *UserService) Register(ctx context.Context, login, password string) (string, error) {
+	if err := us.unitOfWork.Tx(ctx, func(ctx context.Context, work domain.UnitOfWork) error {
+		repository := work.UserRepository()
+		exist, err := repository.Exist(ctx, login)
+		if err != nil {
+			return err
+		}
+		if exist {
+			return ErrLoginAlreadyExists
+		}
+		pwd, salt, err := us.authService.GenerateHash([]byte(password))
+		if err != nil {
+			return err
+		}
+		user := domain.NewUser(login, pwd, salt)
+		if err := repository.Insert(ctx, user); err != nil {
+			return err
+		}
+		user, err = repository.Get(ctx, login)
+		if err != nil {
+			return err
+		}
+		var state domain.SyncState
+		state.ID = syncTypeName
+		state.UserID = user.ID
+		state.Value = 0
+		return nil
+	}); err != nil {
+		return "", err
+	}
 	repository := us.unitOfWork.UserRepository()
-	exist, err := repository.Exist(ctx, login)
-	if err != nil {
-		return "", err
-	}
-	if exist {
-		return "", ErrLoginAlreadyExists
-	}
-	pwd, salt, err := us.authService.GenerateHash([]byte(password))
-	if err != nil {
-		return "", err
-	}
-	user := domain.NewUser(login, pwd, salt)
-	if err := repository.Insert(ctx, user); err != nil {
-		return "", err
-	}
-	user, err = repository.Get(ctx, login)
+	user, err := repository.Get(ctx, login)
 	if err != nil {
 		return "", err
 	}

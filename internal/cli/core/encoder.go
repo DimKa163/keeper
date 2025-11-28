@@ -1,5 +1,5 @@
 package core
 
 type Encoder interface {
-	Encode(record *Record, data, materKey []byte) error
+	Encode(data, key []byte) ([]byte, []byte, error)
 }

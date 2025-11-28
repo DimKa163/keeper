@@ -1,0 +1,25 @@
+﻿edition = "2023";
+
+package go;
+
+import "google/protobuf/go_features.proto";
+option features.(pb.go).api_level = API_OPAQUE;
+
+option go_package = "/pb";
+
+enum ServerState{
+  NotHealthy = 0;
+  Healthy = 1;
+}
+
+message HealthCheckRequest {
+
+}
+
+message HealthCheckResponse {
+  ServerState state = 1;
+}
+
+service HealthService {
+  rpc Check(HealthCheckRequest) returns(HealthCheckResponse);
+}

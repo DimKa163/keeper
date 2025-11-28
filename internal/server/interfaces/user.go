@@ -3,6 +3,7 @@ package interfaces
 import (
 	"context"
 	"errors"
+	"github.com/DimKa163/keeper/internal/server/usecase"
 
 	"github.com/DimKa163/keeper/internal/pb"
 
@@ -33,6 +34,9 @@ func (us *UsersServer) Login(ctx context.Context, in *pb.User) (*pb.UserResponse
 
 	token, err := us.app.Login(ctx, in.GetLogin(), in.GetPassword())
 	if err != nil {
+		if errors.Is(usecase.ErrUserNotFound, err) {
+			return nil, status.Error(codes.Unauthenticated, err.Error())
+		}
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	response.SetToken(token)
@@ -47,6 +51,9 @@ func (us *UsersServer) Register(ctx context.Context, in *pb.User) (*pb.UserRespo
 	}
 	token, err := us.app.Register(ctx, in.GetLogin(), in.GetPassword())
 	if err != nil {
+		if errors.Is(usecase.ErrLoginAlreadyExists, err) {
+			return nil, status.Error(codes.AlreadyExists, err.Error())
+		}
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	response.SetToken(token)

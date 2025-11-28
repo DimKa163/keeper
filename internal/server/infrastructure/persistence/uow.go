@@ -23,8 +23,8 @@ func (u *UnitOfWork) DataRepository() domain.DataRepository {
 	return NewStoredDataRepository(u.db)
 }
 
-func (u *UnitOfWork) FilePartRepository() domain.FilePartRepository {
-	panic("implement me")
+func (u *UnitOfWork) SyncStateRepository() domain.SyncStateRepository {
+	return NewSyncStateRepository(u.db)
 }
 
 func (u *UnitOfWork) Tx(ctx context.Context, fn func(ctx context.Context, work domain.UnitOfWork) error) error {

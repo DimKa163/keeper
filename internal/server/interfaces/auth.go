@@ -37,3 +37,42 @@ func UnaryIdentifyInterceptor(engine auth.Engine, skip map[string]bool) grpc.Una
 		return handler(ctx, req)
 	}
 }
+
+func StreamIdentifyInterceptor(engine auth.Engine) grpc.StreamServerInterceptor {
+	return func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+		ctx := ss.Context()
+		md, ok := metadata.FromIncomingContext(ctx)
+		if !ok {
+			return status.Error(codes.Unauthenticated, "missing metadata")
+		}
+		if !ok {
+			return status.Error(codes.Unauthenticated, "metadata not found in context")
+		}
+		val := md.Get("authorization")
+		if len(val) == 0 {
+			return status.Error(codes.Unauthenticated, "authorization not found in context")
+		}
+		cl, err := engine.ReadToken(val[0])
+		if err != nil {
+			return status.Error(codes.Unauthenticated, "authorization expired")
+		}
+		id, err := guid.ParseString(cl.ID)
+		if err != nil {
+			return status.Error(codes.Internal, "unrecognized user id")
+		}
+		ctx = sh.SetUser(ctx, *id)
+		return handler(srv, &wrappedServerStream{
+			ServerStream: ss,
+			ctx:          ctx,
+		})
+	}
+}
+
+type wrappedServerStream struct {
+	grpc.ServerStream
+	ctx context.Context
+}
+
+func (ss *wrappedServerStream) Context() context.Context {
+	return ss.ctx
+}

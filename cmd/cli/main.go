@@ -5,7 +5,6 @@ import (
 	"log"
 
 	"github.com/DimKa163/keeper/app/cmd"
-	"github.com/DimKa163/keeper/internal/cli"
 )
 
 func main() {
@@ -13,8 +12,8 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	app.AddCommand("create-login-pass", cli.AddLoginPassCommand())
-	if err := app.Run(); err != nil {
+	app.RegisterCommands()
+	if err := app.Execute(); err != nil {
 		fmt.Println("Error: ", err)
 	}
 }

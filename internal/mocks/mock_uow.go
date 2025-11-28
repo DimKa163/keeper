@@ -49,18 +49,18 @@ func (mr *MockUnitOfWorkMockRecorder) DataRepository() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DataRepository", reflect.TypeOf((*MockUnitOfWork)(nil).DataRepository))
 }
 
-// FilePartRepository mocks base method.
-func (m *MockUnitOfWork) FilePartRepository() domain.FilePartRepository {
+// SyncStateRepository mocks base method.
+func (m *MockUnitOfWork) SyncStateRepository() domain.SyncStateRepository {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FilePartRepository")
-	ret0, _ := ret[0].(domain.FilePartRepository)
+	ret := m.ctrl.Call(m, "SyncStateRepository")
+	ret0, _ := ret[0].(domain.SyncStateRepository)
 	return ret0
 }
 
-// FilePartRepository indicates an expected call of FilePartRepository.
-func (mr *MockUnitOfWorkMockRecorder) FilePartRepository() *gomock.Call {
+// SyncStateRepository indicates an expected call of SyncStateRepository.
+func (mr *MockUnitOfWorkMockRecorder) SyncStateRepository() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FilePartRepository", reflect.TypeOf((*MockUnitOfWork)(nil).FilePartRepository))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SyncStateRepository", reflect.TypeOf((*MockUnitOfWork)(nil).SyncStateRepository))
 }
 
 // Tx mocks base method.

@@ -6,3 +6,11 @@ type User struct {
 	Password []byte
 	Salt     []byte
 }
+
+type Server struct {
+	ID       int32
+	Address  string
+	Login    string
+	Password string
+	Active   bool
+}

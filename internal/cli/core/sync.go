@@ -1,8 +1,6 @@
 package core
 
-import "time"
-
 type SyncState struct {
-	ID           string
-	LastSyncTime time.Time
+	ID    string
+	Value int32
 }

@@ -4,8 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"time"
-
 	"github.com/DimKa163/keeper/internal/server/domain"
 	"github.com/DimKa163/keeper/internal/server/shared/db"
 	"github.com/beevik/guid"
@@ -17,14 +15,15 @@ const (
     				id, 
     				created_at,
     				modified_at,
-    				name, 
     				user_id, 
-    				large, 
+    				big_data, 
     				data_type, 
     				payload, 
     				payload_nonce, 
     				dek, 
-    				dek_nonce, 
+    				dek_nonce,
+    				file_data_nonce,
+    				path,
     				version,
     				deleted
 					FROM data 
@@ -33,42 +32,45 @@ const (
     				id, 
     				created_at,
     				modified_at,
-    				name, 
     				user_id, 
-    				large, 
+    				big_data, 
     				data_type, 
     				payload, 
     				payload_nonce, 
     				dek, 
-    				dek_nonce, 
+    				dek_nonce,
+    				file_data_nonce,
+    				path,
     				version,
     				deleted
 					FROM data 
-					WHERE user_id = $1 AND modified_at > $2
+					WHERE user_id = $1 AND version > $2
 					ORDER BY modified_at ASC`
 	insertStoredDataQUERY = `INSERT INTO data (
 				 	id,
-    				name, 
     				user_id, 
-    				large, 
+    				big_data, 
     				data_type, 
     				payload, 
     				payload_nonce, 
     				dek, 
-    				dek_nonce, 
-    				version)
-    				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`
+    				dek_nonce,
+                  	file_data_nonce,
+                  	path,
+    				version,
+                  	deleted)
+    				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`
 	updateStoredDataQUERY = `UPDATE data 
 							SET
-							name = $2,
-							user_id = $3,
-							large = $4,
-							payload_type = $5,
-							payload = $6,
-							data_nonce = $7,
-							dek = $8,
-							dek_nonce = $9,
-							version = $10
+							user_id = $2,
+							big_data = $3,
+							data_type = $4,
+							payload = $5,
+							payload_nonce = $6,
+							dek = $7,
+							dek_nonce = $8,
+							file_data_nonce = $9,
+							version = $10,
 							modified_at = $11
 							WHERE id = $1`
 	deleteStoredDataQUERY = `UPDATE data SET deleted = $2, version=$3 WHERE id = $1`
@@ -87,28 +89,30 @@ func (sdr *DataRepository) Get(ctx context.Context, dataID guid.Guid) (*domain.D
 	var id guid.Guid
 	var createdAt sql.NullTime
 	var modifiedAt sql.NullTime
-	var name string
 	var userID guid.Guid
 	var typeStr string
-	var large bool
+	var bigData bool
 	var payload []byte
 	var payloadNonce []byte
 	var dek []byte
 	var dekNonce []byte
+	var fileDataNonce []byte
+	var path string
 	var version int32
 	var deleted bool
 	if err := sdr.db.QueryRow(ctx, getStoredDataQUERY, dataID).
 		Scan(&id,
 			&createdAt,
 			&modifiedAt,
-			&name,
 			&userID,
-			&large,
+			&bigData,
 			&typeStr,
 			&payload,
 			&payloadNonce,
 			&dek,
 			&dekNonce,
+			&fileDataNonce,
+			&path,
 			&version,
 			&deleted); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -123,7 +127,6 @@ func (sdr *DataRepository) Get(ctx context.Context, dataID guid.Guid) (*domain.D
 	if modifiedAt.Valid {
 		storedData.ModifiedAt = modifiedAt.Time
 	}
-	storedData.Name = name
 	storedData.UserID = userID
 	switch typeStr {
 	case "login_pass":
@@ -135,17 +138,19 @@ func (sdr *DataRepository) Get(ctx context.Context, dataID guid.Guid) (*domain.D
 	case "other":
 		storedData.Type = domain.OtherType
 	}
-	storedData.Large = large
+	storedData.BigData = bigData
 	storedData.Payload = payload
 	storedData.PayloadNonce = payloadNonce
 	storedData.Dek = dek
 	storedData.DekNonce = dekNonce
+	storedData.FileDataNonce = fileDataNonce
+	storedData.Path = path
 	storedData.Version = version
 	storedData.Deleted = deleted
 	return &storedData, nil
 }
 
-func (sdr *DataRepository) GetAll(ctx context.Context, userID guid.Guid, greater time.Time) ([]*domain.Data, error) {
+func (sdr *DataRepository) GetAll(ctx context.Context, userID guid.Guid, greater int32) ([]*domain.Data, error) {
 	row, err := sdr.db.Query(ctx, getAllStoredDataQUERY, userID, greater)
 	if err != nil {
 		return nil, err
@@ -157,27 +162,29 @@ func (sdr *DataRepository) GetAll(ctx context.Context, userID guid.Guid, greater
 		var id guid.Guid
 		var createdAt sql.NullTime
 		var modifiedAt sql.NullTime
-		var name string
 		var usID guid.Guid
 		var typeStr string
-		var large bool
+		var bigData bool
 		var payload []byte
 		var payloadNonce []byte
 		var dek []byte
 		var dekNonce []byte
+		var fileDataNonce []byte
+		var path string
 		var version int32
 		var deleted bool
 		if err := row.Scan(&id,
 			&createdAt,
 			&modifiedAt,
-			&name,
 			&usID,
-			&large,
+			&bigData,
 			&typeStr,
 			&payload,
 			&payloadNonce,
 			&dek,
 			&dekNonce,
+			&fileDataNonce,
+			&path,
 			&version,
 			&deleted); err != nil {
 			return nil, err
@@ -190,7 +197,6 @@ func (sdr *DataRepository) GetAll(ctx context.Context, userID guid.Guid, greater
 		if modifiedAt.Valid {
 			data.ModifiedAt = modifiedAt.Time
 		}
-		data.Name = name
 		data.UserID = userID
 		switch typeStr {
 		case "login_pass":
@@ -202,11 +208,13 @@ func (sdr *DataRepository) GetAll(ctx context.Context, userID guid.Guid, greater
 		case "other":
 			data.Type = domain.OtherType
 		}
-		data.Large = large
+		data.BigData = bigData
 		data.Payload = payload
 		data.PayloadNonce = payloadNonce
 		data.Dek = dek
 		data.DekNonce = dekNonce
+		data.FileDataNonce = fileDataNonce
+		data.Path = path
 		data.Version = version
 		data.Deleted = deleted
 	}
@@ -218,15 +226,17 @@ func (sdr *DataRepository) Insert(ctx context.Context, data *domain.Data) error 
 		ctx,
 		insertStoredDataQUERY,
 		data.ID,
-		data.Name,
 		data.UserID,
-		data.Large,
+		data.BigData,
 		data.Type,
 		data.Payload,
 		data.PayloadNonce,
 		data.Dek,
 		data.DekNonce,
+		data.FileDataNonce,
+		data.Path,
 		data.Version,
+		data.Deleted,
 	); err != nil {
 		return err
 	}
@@ -238,14 +248,14 @@ func (sdr *DataRepository) Update(ctx context.Context, data *domain.Data) error 
 		ctx,
 		updateStoredDataQUERY,
 		data.ID,
-		data.Name,
 		data.UserID,
-		data.Large,
+		data.BigData,
 		data.Type,
 		data.Payload,
 		data.PayloadNonce,
 		data.Dek,
 		data.DekNonce,
+		data.FileDataNonce,
 		data.Version,
 		data.ModifiedAt,
 	); err != nil {

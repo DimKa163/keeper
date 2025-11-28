@@ -1,10 +1,11 @@
 package crypto
 
 import (
+	"bytes"
+	"compress/gzip"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
-
 	"github.com/DimKa163/keeper/internal/cli/core"
 )
 
@@ -18,31 +19,7 @@ func NewAesEncoder() core.Encoder {
 	}
 }
 
-func (a *AesEncoder) Encode(record *core.Record, data, materKey []byte) error {
-	dek, err := generateDek(a.dekLength)
-	if err != nil {
-		return err
-	}
-	record.DataNonce, record.Data, err = seal(data, dek)
-	if err != nil {
-		return err
-	}
-	record.DekNonce, record.Dek, err = seal(dek, materKey)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func generateDek(len int32) ([]byte, error) {
-	dek := make([]byte, len)
-	if _, err := rand.Read(dek); err != nil {
-		return nil, err
-	}
-	return dek, nil
-}
-
-func seal(data []byte, key []byte) ([]byte, []byte, error) {
+func (a *AesEncoder) Encode(data, key []byte) (dataNonce, cipherData []byte, err error) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, nil, err
@@ -56,6 +33,32 @@ func seal(data []byte, key []byte) ([]byte, []byte, error) {
 		return nil, nil, err
 	}
 
-	cipherData := gcm.Seal(nil, nonce, data, nil)
+	cipherData = gcm.Seal(nil, nonce, data, nil)
 	return nonce, cipherData, nil
+}
+
+type GzipEncoder struct {
+	encoder core.Encoder
+}
+
+func NewGzipEncoder(encoder core.Encoder) core.Encoder {
+	return &GzipEncoder{
+		encoder: encoder,
+	}
+}
+
+func (g *GzipEncoder) Encode(data, key []byte) (dataNonce, cipherData []byte, err error) {
+	var buf bytes.Buffer
+	gz, err := gzip.NewWriterLevel(&buf, gzip.DefaultCompression)
+	if err != nil {
+		return
+	}
+	_, err = gz.Write(data)
+	if err != nil {
+		return
+	}
+	if err = gz.Close(); err != nil {
+		return nil, nil, err
+	}
+	return g.encoder.Encode(buf.Bytes(), key)
 }

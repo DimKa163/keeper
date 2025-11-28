@@ -9,31 +9,27 @@ import (
 
 const (
 	recordExistsStmt = `SELECT EXISTS(SELECT id FROM records WHERE id = $1)`
-	getAllStmt       = `SELECT id, created_at, modified_at, type, data, data_nonce, dek, dek_nonce, version FROM records
+	getAllStmt       = `SELECT id, created_at, modified_at, type, big_data, data, data_nonce, dek, dek_nonce, file_path, file_nonce, version, deleted, corrupted FROM records
+				WHERE deleted = ?
 				ORDER BY id
 				LIMIT ? OFFSET ?`
-	getRecordByIDStmt = `SELECT id, created_at, modified_at, type, data, data_nonce, dek, dek_nonce, version FROM records
+	getRecordByIDStmt = `SELECT id, created_at, modified_at, type, big_data, data, data_nonce, dek, dek_nonce, file_path, file_nonce, version, deleted, corrupted FROM records
 			WHERE id = ?`
-	insertStmt = `INSERT INTO records (id, created_at, modified_at, type, data, data_nonce, dek, dek_nonce, version) 
-	VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+	insertStmt = `INSERT INTO records (id, type, big_data, data, data_nonce, dek, dek_nonce, file_path, file_nonce, version) 
+	VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 
-	updateStmt = `UPDATE records SET data = ?, data_nonce = ?, dek = ?, dek_nonce = ?, version = ?, modified_at = ? WHERE id = ?`
+	updateStmt = `UPDATE records SET big_data = ?, data = ?, data_nonce = ?, dek = ?, dek_nonce = ?, file_path = ?, file_nonce = ?, version = ?, deleted = ?, modified_at = ? WHERE id = ?`
 
 	updateVersionStmt = `UPDATE records SET version = ? WHERE id = ?`
 
-	deleteStmt = `DELETE FROM records WHERE id = ?`
+	deleteStmt                 = `DELETE FROM records WHERE id = ?`
+	getAllRecordGreaterVersion = `SELECT id, created_at, modified_at, type, big_data, data, data_nonce, dek, dek_nonce, file_path, file_nonce, deleted, version FROM records
+	WHERE version > ?`
+	updateCorruptedStmt = `UPDATE records SET corrupted = ? WHERE id = ?`
 )
 
-type RecordRepository struct {
-	db *sql.DB
-}
-
-func NewRecordRepository(db *sql.DB) *RecordRepository {
-	return &RecordRepository{db: db}
-}
-
-func GetAllRecord(ctx context.Context, db *sql.DB, limit, offset int) ([]*core.Record, error) {
-	rows, err := db.QueryContext(ctx, getAllStmt, limit, offset)
+func GetAllRecord(ctx context.Context, db *sql.DB, limit, offset int32) ([]*core.Record, error) {
+	rows, err := db.QueryContext(ctx, getAllStmt, false, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -45,11 +41,15 @@ func GetAllRecord(ctx context.Context, db *sql.DB, limit, offset int) ([]*core.R
 			&r.CreatedAt,
 			&r.ModifiedAt,
 			&r.Type,
+			&r.BigData,
 			&r.Data,
 			&r.DataNonce,
 			&r.Dek,
 			&r.DekNonce,
-			&r.Version); err != nil {
+			&r.FilePath,
+			&r.FileNonce,
+			&r.Version,
+			&r.Deleted); err != nil {
 			return nil, err
 		}
 		records = append(records, &r)
@@ -70,10 +70,43 @@ func TxGetAllRecord(ctx context.Context, tx *sql.Tx, limit, offset int) ([]*core
 			&r.CreatedAt,
 			&r.ModifiedAt,
 			&r.Type,
+			&r.BigData,
 			&r.Data,
 			&r.DataNonce,
 			&r.Dek,
 			&r.DekNonce,
+			&r.FilePath,
+			&r.FileNonce,
+			&r.Version,
+			&r.Deleted); err != nil {
+			return nil, err
+		}
+		records = append(records, &r)
+	}
+	return records, nil
+}
+
+func TxGetAllRecordGreater(ctx context.Context, tx *sql.Tx, version int32) ([]*core.Record, error) {
+	rows, err := tx.QueryContext(ctx, getAllRecordGreaterVersion, version)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	records := make([]*core.Record, 0)
+	for rows.Next() {
+		var r core.Record
+		if err = rows.Scan(&r.ID,
+			&r.CreatedAt,
+			&r.ModifiedAt,
+			&r.Type,
+			&r.BigData,
+			&r.Data,
+			&r.DataNonce,
+			&r.Dek,
+			&r.DekNonce,
+			&r.FilePath,
+			&r.FileNonce,
+			&r.Deleted,
 			&r.Version); err != nil {
 			return nil, err
 		}
@@ -103,11 +136,15 @@ func GetRecordByID(ctx context.Context, db *sql.DB, id string) (*core.Record, er
 		&r.CreatedAt,
 		&r.ModifiedAt,
 		&r.Type,
+		&r.BigData,
 		&r.Data,
 		&r.DataNonce,
 		&r.Dek,
 		&r.DekNonce,
-		&r.Version); err != nil {
+		&r.FilePath,
+		&r.FileNonce,
+		&r.Version,
+		&r.Deleted); err != nil {
 		return nil, err
 	}
 	return &r, nil
@@ -118,11 +155,15 @@ func TxGetRecordByID(ctx context.Context, tx *sql.Tx, id string) (*core.Record, 
 		&r.CreatedAt,
 		&r.ModifiedAt,
 		&r.Type,
+		&r.BigData,
 		&r.Data,
 		&r.DataNonce,
 		&r.Dek,
 		&r.DekNonce,
-		&r.Version); err != nil {
+		&r.FilePath,
+		&r.FileNonce,
+		&r.Version,
+		&r.Deleted); err != nil {
 		return nil, err
 	}
 	return &r, nil
@@ -136,10 +177,13 @@ func InsertRecord(ctx context.Context, db *sql.DB, record *core.Record) error {
 		record.CreatedAt,
 		record.ModifiedAt,
 		record.Type,
+		record.BigData,
 		record.Data,
 		record.DataNonce,
 		record.Dek,
 		record.DekNonce,
+		record.FilePath,
+		record.FileNonce,
 		record.Version,
 	); err != nil {
 		return err
@@ -155,10 +199,13 @@ func TxInsertRecord(ctx context.Context, db *sql.Tx, record *core.Record) error 
 		record.CreatedAt,
 		record.ModifiedAt,
 		record.Type,
+		record.BigData,
 		record.Data,
 		record.DataNonce,
 		record.Dek,
 		record.DekNonce,
+		&record.FilePath,
+		&record.FileNonce,
 		record.Version,
 	); err != nil {
 		return err
@@ -170,10 +217,15 @@ func UpdateRecord(ctx context.Context, db *sql.DB, record *core.Record) error {
 	if _, err := db.ExecContext(
 		ctx,
 		updateStmt,
+		record.BigData,
 		record.Data,
 		record.DataNonce,
 		record.Dek,
 		record.DekNonce,
+		record.FilePath,
+		record.FileNonce,
+		record.Version,
+		record.Deleted,
 		record.ModifiedAt,
 		record.ID,
 	); err != nil {
@@ -185,25 +237,17 @@ func TxUpdateRecord(ctx context.Context, db *sql.Tx, record *core.Record) error 
 	if _, err := db.ExecContext(
 		ctx,
 		updateStmt,
+		record.BigData,
 		record.Data,
 		record.DataNonce,
 		record.Dek,
 		record.DekNonce,
+		record.FilePath,
+		record.FileNonce,
 		record.Version,
+		record.Deleted,
 		record.ModifiedAt,
 		record.ID,
-	); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (rep *RecordRepository) UpdateVersion(ctx context.Context, id string, version int32) error {
-	if _, err := rep.db.ExecContext(
-		ctx,
-		updateVersionStmt,
-		version,
-		id,
 	); err != nil {
 		return err
 	}
@@ -225,6 +269,29 @@ func TxDeleteRecord(ctx context.Context, db *sql.Tx, id string) error {
 	if _, err := db.ExecContext(
 		ctx,
 		deleteStmt,
+		id,
+	); err != nil {
+		return err
+	}
+	return nil
+}
+func CorruptRecord(ctx context.Context, db *sql.DB, val bool, id string) error {
+	if _, err := db.ExecContext(
+		ctx,
+		updateCorruptedStmt,
+		val,
+		id,
+	); err != nil {
+		return err
+	}
+	return nil
+}
+
+func TxCorruptRecord(ctx context.Context, db *sql.Tx, val bool, id string) error {
+	if _, err := db.ExecContext(
+		ctx,
+		updateCorruptedStmt,
+		val,
 		id,
 	); err != nil {
 		return err

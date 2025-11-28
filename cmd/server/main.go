@@ -23,7 +23,11 @@ func main() {
 	if err = srv.AddServices(); err != nil {
 		logger.Fatal(err.Error())
 	}
-	if err = srv.ListenAndServe(); err != nil {
+	srv.Map()
+	if err = srv.Migrate(); err != nil {
+		logger.Fatal(err.Error())
+	}
+	if err = srv.Run(); err != nil {
 		logger.Fatal(err.Error())
 	}
 }

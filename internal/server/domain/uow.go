@@ -8,7 +8,7 @@ type UnitOfWork interface {
 
 	DataRepository() DataRepository
 
-	FilePartRepository() FilePartRepository
+	SyncStateRepository() SyncStateRepository
 
 	Tx(ctx context.Context, fn func(ctx context.Context, work UnitOfWork) error) error
 }

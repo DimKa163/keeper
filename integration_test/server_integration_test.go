@@ -2,7 +2,9 @@ package integration_test
 
 import (
 	"context"
+	"crypto/rand"
 	"fmt"
+	"github.com/beevik/guid"
 	"testing"
 	"time"
 
@@ -84,44 +86,76 @@ func TestUserService_Login(t *testing.T) {
 	assert.True(t, resp.HasToken())
 }
 
-//func TestDataService_Upload(t *testing.T) {
-//	ctx := context.Background()
-//	container, serv, err := run(ctx, t, func(s *services) error {
-//		return nil
-//	})
-//	if err != nil {
-//		t.Fatal(err)
-//	}
-//	defer container.Terminate(ctx)
-//	defer serv.DBPool.Close()
-//	defer serv.Shutdown(ctx)
-//
-//	client := serv.DataClient
-//	id := *guid.New()
-//	// генерим ерунду так как серверу пофиг что там внутри
-//	dek, dekNonce := make([]byte, 32), make([]byte, 16)
-//	_, _ = rand.Read(dek)
-//	_, _ = rand.Read(dekNonce)
-//	dt, dtNonce := make([]byte, 4026), make([]byte, 16)
-//	_, _ = rand.Read(dt)
-//	_, _ = rand.Read(dtNonce)
-//	req := pb.UploadRequest{}
-//	data := pb.Data{}
-//	data.SetId(id.String())
-//	data.SetName("login/pass")
-//	data.SetData(dt)
-//	data.SetDataNonce(dtNonce)
-//	data.SetDek(dek)
-//	data.SetDekNonce(dekNonce)
-//	data.SetLarge(false)
-//	data.SetType(pb.Data_LoginPass)
-//	data.SetVersion(1)
-//	req.SetData(&data)
-//	resp, err := client.Upload(ctx, &req)
-//	assert.NoError(t, err)
-//	assert.NotNil(t, resp)
-//
-//}
+func TestDataService_Push(t *testing.T) {
+	ctx := context.Background()
+	container, serv, err := run(ctx, t, func(s *services) error {
+		user, _ := s.UnitOfWork.UserRepository().Get(ctx, "root")
+		rep := s.UnitOfWork.SyncStateRepository()
+		state, _ := rep.Get(ctx, "Data", user.ID)
+		state.Value = 2
+		_ = rep.Save(ctx, state)
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer container.Terminate(ctx)
+	defer serv.DBPool.Close()
+	defer serv.Shutdown(ctx)
+	user, _ := serv.UnitOfWork.UserRepository().Get(ctx, "root")
+	client := serv.DataClient
+	id := *guid.New()
+	// генерим ерунду так как серверу пофиг что там внутри
+	dek, dekNonce := make([]byte, 32), make([]byte, 16)
+	_, _ = rand.Read(dek)
+	_, _ = rand.Read(dekNonce)
+	dt, dtNonce := make([]byte, 1024*1024*50), make([]byte, 16)
+	_, _ = rand.Read(dt)
+	_, _ = rand.Read(dtNonce)
+	str, err := client.PushStream(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var push pb.Push
+	var data pb.Data
+	data.SetId(id.String())
+	data.SetDek(dek)
+	data.SetDekNonce(dekNonce)
+	data.SetType(pb.Data_Other)
+	data.SetLarge(true)
+	data.SetDataNonce(dtNonce)
+	data.SetVersion(1)
+	push.SetData(&data)
+	push.SetType(pb.RequestType_StartData)
+	if err := str.Send(&push); err != nil {
+		t.Fatal(err)
+	}
+	const chunkSize = 1 * 1024 * 1024 // 1
+	for i := 0; i < len(dt); i += chunkSize {
+		end := i + chunkSize
+		push = pb.Push{}
+		data = pb.Data{}
+		data.SetId(id.String())
+		push.SetData(&data)
+		push.SetType(pb.RequestType_FilePart)
+		push.SetChunk(dt[i:end])
+		if err := str.Send(&push); err != nil {
+			t.Fatal(err)
+		}
+	}
+	push = pb.Push{}
+	data = pb.Data{}
+	data.SetId(id.String())
+	push.SetData(&data)
+	push.SetType(pb.RequestType_EndData)
+	if err := str.Send(&push); err != nil {
+		t.Fatal(err)
+	}
+
+	rep := serv.UnitOfWork.SyncStateRepository()
+	state, _ := rep.Get(ctx, "Data", user.ID)
+	assert.Equal(t, state.Value, int64(3))
+}
 
 func run(ctx context.Context, t *testing.T, beforeFn func(pool *services) error) (testcontainers.Container, *services, error) {
 	dbName := "keeperDb"
@@ -151,11 +185,12 @@ func run(ctx context.Context, t *testing.T, beforeFn func(pool *services) error)
 	t.Logf("postgres started at: %s", dsn)
 
 	serv := &services{}
-	addr := ":3300"
+	addr := ":3200"
 
 	if err = configureServer(t, serv, &server2.Config{
 		Addr:            addr,
 		Database:        dsn,
+		FilePath:        "E:\\Data",
 		Secret:          "secret",
 		TokenExpiration: 5000,
 		SaltLength:      16,
@@ -230,11 +265,12 @@ func configureClient(t *testing.T, serv *services, addr, login, pass string) err
 	if err != nil {
 		return err
 	}
-
 	serv.UsersClient = pb.NewUsersClient(conn)
 	serv.interceptor = newInterceptor(serv.UsersClient, login, pass)
+	serv.streamInterceptor = newStreamInterceptor(serv.UsersClient, login, pass)
 	protectedConn, err := grpc.NewClient(addr,
-		grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithChainUnaryInterceptor(serv.interceptor.Handle()))
+		grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithChainUnaryInterceptor(serv.interceptor.Handle()),
+		grpc.WithChainStreamInterceptor(serv.streamInterceptor.Handle()))
 	serv.DataClient = pb.NewSyncDataClient(protectedConn)
 	return err
 }
@@ -290,9 +326,56 @@ func (h *unaryIdentifyInterceptor) login(ctx context.Context) (string, error) {
 	return t.GetToken(), nil
 }
 
+type streamIdentifyInterceptor struct {
+	users    pb.UsersClient
+	token    string
+	username string
+	userpass string
+}
+
+func newStreamInterceptor(users pb.UsersClient, username, userpass string) *streamIdentifyInterceptor {
+	return &streamIdentifyInterceptor{
+		users:    users,
+		username: username,
+		userpass: userpass,
+	}
+}
+
+func (h *streamIdentifyInterceptor) Handle() grpc.StreamClientInterceptor {
+	return func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
+		var err error
+		if h.token == "" {
+			h.token, err = h.login(ctx)
+			if err != nil {
+				return nil, err
+			}
+		}
+		ctx = metadata.AppendToOutgoingContext(ctx, "authorization", h.token)
+
+		stream, err := streamer(ctx, desc, cc, method, opts...)
+		if err != nil {
+			return nil, err
+		}
+
+		return stream, nil
+	}
+}
+
+func (h *streamIdentifyInterceptor) login(ctx context.Context) (string, error) {
+	var us pb.User
+	us.SetLogin(h.username)
+	us.SetPassword(h.userpass)
+	t, err := h.users.Login(ctx, &us)
+	if err != nil {
+		return "", err
+	}
+	return t.GetToken(), nil
+}
+
 type services struct {
 	*server2.Server
-	interceptor *unaryIdentifyInterceptor
-	UsersClient pb.UsersClient
-	DataClient  pb.SyncDataClient
+	interceptor       *unaryIdentifyInterceptor
+	streamInterceptor *streamIdentifyInterceptor
+	UsersClient       pb.UsersClient
+	DataClient        pb.SyncDataClient
 }
