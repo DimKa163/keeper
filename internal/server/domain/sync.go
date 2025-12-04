@@ -13,5 +13,6 @@ type SyncState struct {
 
 type SyncStateRepository interface {
 	Get(ctx context.Context, id string, user guid.Guid) (*SyncState, error)
-	Save(ctx context.Context, syncState *SyncState) error
+	Insert(ctx context.Context, state *SyncState) error
+	Update(ctx context.Context, syncState *SyncState) error
 }

@@ -9,27 +9,27 @@ import (
 
 const (
 	recordExistsStmt = `SELECT EXISTS(SELECT id FROM records WHERE id = $1)`
-	getAllStmt       = `SELECT id, created_at, modified_at, type, big_data, data, data_nonce, dek, dek_nonce, file_path, file_nonce, version, deleted, corrupted FROM records
-				WHERE deleted = ?
+	getAllStmt       = `SELECT id, created_at, modified_at, type, big_data, data, dek, version, deleted, corrupted FROM records
+				WHERE deleted = ? and corrupted = ?
 				ORDER BY id
 				LIMIT ? OFFSET ?`
-	getRecordByIDStmt = `SELECT id, created_at, modified_at, type, big_data, data, data_nonce, dek, dek_nonce, file_path, file_nonce, version, deleted, corrupted FROM records
+	getRecordByIDStmt = `SELECT id, created_at, modified_at, type, big_data, data,  dek, version, deleted, corrupted FROM records
 			WHERE id = ?`
-	insertStmt = `INSERT INTO records (id, type, big_data, data, data_nonce, dek, dek_nonce, file_path, file_nonce, version) 
-	VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+	insertStmt = `INSERT INTO records (id, created_at, modified_at, type, big_data, data,  dek,  version) 
+	VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
 
-	updateStmt = `UPDATE records SET big_data = ?, data = ?, data_nonce = ?, dek = ?, dek_nonce = ?, file_path = ?, file_nonce = ?, version = ?, deleted = ?, modified_at = ? WHERE id = ?`
+	updateStmt = `UPDATE records SET big_data = ?, data = ?, dek = ?, version = ?, deleted = ?, corrupted= ?, modified_at = ? WHERE id = ?`
 
 	updateVersionStmt = `UPDATE records SET version = ? WHERE id = ?`
 
 	deleteStmt                 = `DELETE FROM records WHERE id = ?`
-	getAllRecordGreaterVersion = `SELECT id, created_at, modified_at, type, big_data, data, data_nonce, dek, dek_nonce, file_path, file_nonce, deleted, version FROM records
-	WHERE version > ?`
+	getAllRecordGreaterVersion = `SELECT id, created_at, modified_at, type, big_data, data, dek, deleted, version, corrupted FROM records
+	WHERE version > ? AND corrupted = ?`
 	updateCorruptedStmt = `UPDATE records SET corrupted = ? WHERE id = ?`
 )
 
 func GetAllRecord(ctx context.Context, db *sql.DB, limit, offset int32) ([]*core.Record, error) {
-	rows, err := db.QueryContext(ctx, getAllStmt, false, limit, offset)
+	rows, err := db.QueryContext(ctx, getAllStmt, false, false, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -43,13 +43,10 @@ func GetAllRecord(ctx context.Context, db *sql.DB, limit, offset int32) ([]*core
 			&r.Type,
 			&r.BigData,
 			&r.Data,
-			&r.DataNonce,
 			&r.Dek,
-			&r.DekNonce,
-			&r.FilePath,
-			&r.FileNonce,
 			&r.Version,
-			&r.Deleted); err != nil {
+			&r.Deleted,
+			&r.Corrupted); err != nil {
 			return nil, err
 		}
 		records = append(records, &r)
@@ -58,7 +55,7 @@ func GetAllRecord(ctx context.Context, db *sql.DB, limit, offset int32) ([]*core
 }
 
 func TxGetAllRecord(ctx context.Context, tx *sql.Tx, limit, offset int) ([]*core.Record, error) {
-	rows, err := tx.QueryContext(ctx, getAllStmt, limit, offset)
+	rows, err := tx.QueryContext(ctx, getAllStmt, false, false, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -72,11 +69,7 @@ func TxGetAllRecord(ctx context.Context, tx *sql.Tx, limit, offset int) ([]*core
 			&r.Type,
 			&r.BigData,
 			&r.Data,
-			&r.DataNonce,
 			&r.Dek,
-			&r.DekNonce,
-			&r.FilePath,
-			&r.FileNonce,
 			&r.Version,
 			&r.Deleted); err != nil {
 			return nil, err
@@ -87,7 +80,7 @@ func TxGetAllRecord(ctx context.Context, tx *sql.Tx, limit, offset int) ([]*core
 }
 
 func TxGetAllRecordGreater(ctx context.Context, tx *sql.Tx, version int32) ([]*core.Record, error) {
-	rows, err := tx.QueryContext(ctx, getAllRecordGreaterVersion, version)
+	rows, err := tx.QueryContext(ctx, getAllRecordGreaterVersion, version, false)
 	if err != nil {
 		return nil, err
 	}
@@ -101,13 +94,10 @@ func TxGetAllRecordGreater(ctx context.Context, tx *sql.Tx, version int32) ([]*c
 			&r.Type,
 			&r.BigData,
 			&r.Data,
-			&r.DataNonce,
 			&r.Dek,
-			&r.DekNonce,
-			&r.FilePath,
-			&r.FileNonce,
 			&r.Deleted,
-			&r.Version); err != nil {
+			&r.Version,
+			&r.Corrupted); err != nil {
 			return nil, err
 		}
 		records = append(records, &r)
@@ -138,13 +128,10 @@ func GetRecordByID(ctx context.Context, db *sql.DB, id string) (*core.Record, er
 		&r.Type,
 		&r.BigData,
 		&r.Data,
-		&r.DataNonce,
 		&r.Dek,
-		&r.DekNonce,
-		&r.FilePath,
-		&r.FileNonce,
 		&r.Version,
-		&r.Deleted); err != nil {
+		&r.Deleted,
+		&r.Corrupted); err != nil {
 		return nil, err
 	}
 	return &r, nil
@@ -157,13 +144,10 @@ func TxGetRecordByID(ctx context.Context, tx *sql.Tx, id string) (*core.Record, 
 		&r.Type,
 		&r.BigData,
 		&r.Data,
-		&r.DataNonce,
 		&r.Dek,
-		&r.DekNonce,
-		&r.FilePath,
-		&r.FileNonce,
 		&r.Version,
-		&r.Deleted); err != nil {
+		&r.Deleted,
+		&r.Corrupted); err != nil {
 		return nil, err
 	}
 	return &r, nil
@@ -174,16 +158,10 @@ func InsertRecord(ctx context.Context, db *sql.DB, record *core.Record) error {
 		ctx,
 		insertStmt,
 		record.ID,
-		record.CreatedAt,
-		record.ModifiedAt,
 		record.Type,
 		record.BigData,
 		record.Data,
-		record.DataNonce,
 		record.Dek,
-		record.DekNonce,
-		record.FilePath,
-		record.FileNonce,
 		record.Version,
 	); err != nil {
 		return err
@@ -201,11 +179,7 @@ func TxInsertRecord(ctx context.Context, db *sql.Tx, record *core.Record) error 
 		record.Type,
 		record.BigData,
 		record.Data,
-		record.DataNonce,
 		record.Dek,
-		record.DekNonce,
-		&record.FilePath,
-		&record.FileNonce,
 		record.Version,
 	); err != nil {
 		return err
@@ -219,13 +193,10 @@ func UpdateRecord(ctx context.Context, db *sql.DB, record *core.Record) error {
 		updateStmt,
 		record.BigData,
 		record.Data,
-		record.DataNonce,
 		record.Dek,
-		record.DekNonce,
-		record.FilePath,
-		record.FileNonce,
 		record.Version,
 		record.Deleted,
+		record.Corrupted,
 		record.ModifiedAt,
 		record.ID,
 	); err != nil {
@@ -239,13 +210,10 @@ func TxUpdateRecord(ctx context.Context, db *sql.Tx, record *core.Record) error 
 		updateStmt,
 		record.BigData,
 		record.Data,
-		record.DataNonce,
 		record.Dek,
-		record.DekNonce,
-		record.FilePath,
-		record.FileNonce,
 		record.Version,
 		record.Deleted,
+		record.Corrupted,
 		record.ModifiedAt,
 		record.ID,
 	); err != nil {

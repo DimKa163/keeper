@@ -53,7 +53,7 @@ func (mr *MockSyncStateRepositoryMockRecorder) Get(ctx, id interface{}) *gomock.
 // Save mocks base method.
 func (m *MockSyncStateRepository) Save(ctx context.Context, syncState *domain.SyncState) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Save", ctx, syncState)
+	ret := m.ctrl.Call(m, "Update", ctx, syncState)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
@@ -61,5 +61,5 @@ func (m *MockSyncStateRepository) Save(ctx context.Context, syncState *domain.Sy
 // Save indicates an expected call of Save.
 func (mr *MockSyncStateRepositoryMockRecorder) Save(ctx, syncState interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Save", reflect.TypeOf((*MockSyncStateRepository)(nil).Save), ctx, syncState)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockSyncStateRepository)(nil).Save), ctx, syncState)
 }

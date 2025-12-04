@@ -2,9 +2,7 @@ package core
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/DimKa163/keeper/internal/shared"
-	"os"
 	"time"
 
 	"github.com/beevik/guid"
@@ -26,38 +24,18 @@ type Record struct {
 	Type       DataType  `json:"type"`
 	BigData    bool      `json:"big_data"`
 	Data       []byte    `json:"data"`
-	DataNonce  []byte    `json:"data_nonce"`
 	Dek        []byte    `json:"dek"`
-	DekNonce   []byte    `json:"dek_nonce"`
 	Version    int32     `json:"version"`
-	FilePath   string    `json:"file_path"`
-	FileNonce  []byte    `json:"file_nonce"`
 	Deleted    bool      `json:"deleted"`
 	Corrupted  bool      `json:"corrupted"`
 }
 
-func CreateRecord(tp DataType, version int32) *Record {
+func CreateRecord(tp DataType) *Record {
 	return &Record{
 		ID:        guid.NewString(),
 		CreatedAt: time.Now(),
 		Type:      tp,
-		Version:   version,
 	}
-}
-
-func (r *Record) File() (*os.File, error) {
-	return os.OpenFile(fmt.Sprintf("data_%s_%d", r.ID, r.Version), os.O_RDWR|os.O_CREATE, 0644)
-}
-
-func (r *Record) Remove(version int32) error {
-	if r.FilePath == "" {
-		return nil
-	}
-	err := os.Remove(fmt.Sprintf("%s_%d", r.ID, version))
-	if err != nil && !os.IsNotExist(err) {
-		return err
-	}
-	return nil
 }
 
 //func (r *Record) Encode(encoder Encoder, data, masterKey []byte) error {
@@ -65,11 +43,11 @@ func (r *Record) Remove(version int32) error {
 //}
 
 func (r *Record) Decode(decoder Decoder, masterKey []byte) ([]byte, error) {
-	dek, err := decoder.Decode(r.DekNonce, r.Dek, masterKey)
+	dek, err := decoder.Decode(r.Dek, masterKey)
 	if err != nil {
 		return nil, err
 	}
-	data, err := decoder.Decode(r.DataNonce, r.Data, dek)
+	data, err := decoder.Decode(r.Data, dek)
 	if err != nil {
 		return nil, err
 	}

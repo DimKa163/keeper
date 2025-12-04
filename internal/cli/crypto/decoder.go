@@ -16,7 +16,7 @@ func NewAesDecoder() core.Decoder {
 	return &AesDecoder{}
 }
 
-func (a *AesDecoder) Decode(nonce, data, key []byte) ([]byte, error) {
+func (a *AesDecoder) Decode(cipherData, key []byte) ([]byte, error) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
@@ -25,6 +25,8 @@ func (a *AesDecoder) Decode(nonce, data, key []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	nonceSize := gcm.NonceSize()
+	nonce, data := cipherData[:nonceSize], cipherData[nonceSize:]
 	return gcm.Open(nil, nonce, data, nil)
 }
 
@@ -51,8 +53,8 @@ func NewGzipDecoder(decoder core.Decoder) core.Decoder {
 	}
 }
 
-func (g GzipDecoder) Decode(nonce, data, key []byte) ([]byte, error) {
-	data, err := g.decoder.Decode(nonce, data, key)
+func (g GzipDecoder) Decode(data, key []byte) ([]byte, error) {
+	data, err := g.decoder.Decode(data, key)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +70,6 @@ type FileDecoder struct {
 	decoder core.Decoder
 	fs      io.ReadCloser
 	dek     []byte
-	nonce   []byte
 }
 
 func (f *FileDecoder) Read(p []byte) (n int, err error) {
@@ -76,7 +77,7 @@ func (f *FileDecoder) Read(p []byte) (n int, err error) {
 	if err != nil {
 		return 0, err
 	}
-	d, err := f.decoder.Decode(f.nonce, data, f.dek)
+	d, err := f.decoder.Decode(data, f.dek)
 	if err != nil {
 		return -1, err
 	}
@@ -88,11 +89,10 @@ func (f *FileDecoder) Close() error {
 	return f.fs.Close()
 }
 
-func NewFileDecoder(decoder core.Decoder, fs io.ReadCloser, dek, nonce []byte) io.ReadCloser {
+func NewFileDecoder(decoder core.Decoder, fs io.ReadCloser, dek []byte) io.ReadCloser {
 	return &FileDecoder{
 		decoder: decoder,
 		fs:      fs,
 		dek:     dek,
-		nonce:   nonce,
 	}
 }

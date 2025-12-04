@@ -12,10 +12,7 @@ CREATE TABLE IF NOT EXISTS data(
     big_data boolean NOT NULL,
     data_type data_type NOT NULL,
     payload BYTEA,
-    payload_nonce BYTEA,
     dek BYTEA,
-    dek_nonce BYTEA,
-    file_data_nonce BYTEA,
     path TEXT,
     version INT,
     deleted boolean DEFAULT FALSE

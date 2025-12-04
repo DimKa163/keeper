@@ -19,20 +19,20 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	SyncData_PushUnary_FullMethodName  = "/go.SyncData/PushUnary"
+	SyncData_Push_FullMethodName       = "/go.SyncData/push"
+	SyncData_Pull_FullMethodName       = "/go.SyncData/pull"
 	SyncData_PushStream_FullMethodName = "/go.SyncData/PushStream"
-	SyncData_PollUnary_FullMethodName  = "/go.SyncData/PollUnary"
-	SyncData_PollStream_FullMethodName = "/go.SyncData/PollStream"
+	SyncData_PullStream_FullMethodName = "/go.SyncData/PullStream"
 )
 
 // SyncDataClient is the client API for SyncData service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type SyncDataClient interface {
-	PushUnary(ctx context.Context, in *PushRequest, opts ...grpc.CallOption) (*PushResponse, error)
-	PushStream(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[Push, PushResponse], error)
-	PollUnary(ctx context.Context, in *PollRequest, opts ...grpc.CallOption) (*PollResponse, error)
-	PollStream(ctx context.Context, in *PollRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[Poll], error)
+	Push(ctx context.Context, in *PushRequest, opts ...grpc.CallOption) (*PushResponse, error)
+	Pull(ctx context.Context, in *PullRequest, opts ...grpc.CallOption) (*PullResponse, error)
+	PushStream(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[Chunk, PushResponse], error)
+	PullStream(ctx context.Context, in *PullStreamRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[Chunk], error)
 }
 
 type syncDataClient struct {
@@ -43,46 +43,46 @@ func NewSyncDataClient(cc grpc.ClientConnInterface) SyncDataClient {
 	return &syncDataClient{cc}
 }
 
-func (c *syncDataClient) PushUnary(ctx context.Context, in *PushRequest, opts ...grpc.CallOption) (*PushResponse, error) {
+func (c *syncDataClient) Push(ctx context.Context, in *PushRequest, opts ...grpc.CallOption) (*PushResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(PushResponse)
-	err := c.cc.Invoke(ctx, SyncData_PushUnary_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, SyncData_Push_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *syncDataClient) PushStream(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[Push, PushResponse], error) {
+func (c *syncDataClient) Pull(ctx context.Context, in *PullRequest, opts ...grpc.CallOption) (*PullResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(PullResponse)
+	err := c.cc.Invoke(ctx, SyncData_Pull_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *syncDataClient) PushStream(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[Chunk, PushResponse], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	stream, err := c.cc.NewStream(ctx, &SyncData_ServiceDesc.Streams[0], SyncData_PushStream_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &grpc.GenericClientStream[Push, PushResponse]{ClientStream: stream}
+	x := &grpc.GenericClientStream[Chunk, PushResponse]{ClientStream: stream}
 	return x, nil
 }
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type SyncData_PushStreamClient = grpc.ClientStreamingClient[Push, PushResponse]
+type SyncData_PushStreamClient = grpc.ClientStreamingClient[Chunk, PushResponse]
 
-func (c *syncDataClient) PollUnary(ctx context.Context, in *PollRequest, opts ...grpc.CallOption) (*PollResponse, error) {
+func (c *syncDataClient) PullStream(ctx context.Context, in *PullStreamRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[Chunk], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(PollResponse)
-	err := c.cc.Invoke(ctx, SyncData_PollUnary_FullMethodName, in, out, cOpts...)
+	stream, err := c.cc.NewStream(ctx, &SyncData_ServiceDesc.Streams[1], SyncData_PullStream_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
-}
-
-func (c *syncDataClient) PollStream(ctx context.Context, in *PollRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[Poll], error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	stream, err := c.cc.NewStream(ctx, &SyncData_ServiceDesc.Streams[1], SyncData_PollStream_FullMethodName, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	x := &grpc.GenericClientStream[PollRequest, Poll]{ClientStream: stream}
+	x := &grpc.GenericClientStream[PullStreamRequest, Chunk]{ClientStream: stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -93,16 +93,16 @@ func (c *syncDataClient) PollStream(ctx context.Context, in *PollRequest, opts .
 }
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type SyncData_PollStreamClient = grpc.ServerStreamingClient[Poll]
+type SyncData_PullStreamClient = grpc.ServerStreamingClient[Chunk]
 
 // SyncDataServer is the server API for SyncData service.
 // All implementations must embed UnimplementedSyncDataServer
 // for forward compatibility.
 type SyncDataServer interface {
-	PushUnary(context.Context, *PushRequest) (*PushResponse, error)
-	PushStream(grpc.ClientStreamingServer[Push, PushResponse]) error
-	PollUnary(context.Context, *PollRequest) (*PollResponse, error)
-	PollStream(*PollRequest, grpc.ServerStreamingServer[Poll]) error
+	Push(context.Context, *PushRequest) (*PushResponse, error)
+	Pull(context.Context, *PullRequest) (*PullResponse, error)
+	PushStream(grpc.ClientStreamingServer[Chunk, PushResponse]) error
+	PullStream(*PullStreamRequest, grpc.ServerStreamingServer[Chunk]) error
 	mustEmbedUnimplementedSyncDataServer()
 }
 
@@ -113,17 +113,17 @@ type SyncDataServer interface {
 // pointer dereference when methods are called.
 type UnimplementedSyncDataServer struct{}
 
-func (UnimplementedSyncDataServer) PushUnary(context.Context, *PushRequest) (*PushResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method PushUnary not implemented")
+func (UnimplementedSyncDataServer) Push(context.Context, *PushRequest) (*PushResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method push not implemented")
 }
-func (UnimplementedSyncDataServer) PushStream(grpc.ClientStreamingServer[Push, PushResponse]) error {
+func (UnimplementedSyncDataServer) Pull(context.Context, *PullRequest) (*PullResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method pull not implemented")
+}
+func (UnimplementedSyncDataServer) PushStream(grpc.ClientStreamingServer[Chunk, PushResponse]) error {
 	return status.Errorf(codes.Unimplemented, "method PushStream not implemented")
 }
-func (UnimplementedSyncDataServer) PollUnary(context.Context, *PollRequest) (*PollResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method PollUnary not implemented")
-}
-func (UnimplementedSyncDataServer) PollStream(*PollRequest, grpc.ServerStreamingServer[Poll]) error {
-	return status.Errorf(codes.Unimplemented, "method PollStream not implemented")
+func (UnimplementedSyncDataServer) PullStream(*PullStreamRequest, grpc.ServerStreamingServer[Chunk]) error {
+	return status.Errorf(codes.Unimplemented, "method PullStream not implemented")
 }
 func (UnimplementedSyncDataServer) mustEmbedUnimplementedSyncDataServer() {}
 func (UnimplementedSyncDataServer) testEmbeddedByValue()                  {}
@@ -146,59 +146,59 @@ func RegisterSyncDataServer(s grpc.ServiceRegistrar, srv SyncDataServer) {
 	s.RegisterService(&SyncData_ServiceDesc, srv)
 }
 
-func _SyncData_PushUnary_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _SyncData_Push_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PushRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(SyncDataServer).PushUnary(ctx, in)
+		return srv.(SyncDataServer).Push(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: SyncData_PushUnary_FullMethodName,
+		FullMethod: SyncData_Push_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SyncDataServer).PushUnary(ctx, req.(*PushRequest))
+		return srv.(SyncDataServer).Push(ctx, req.(*PushRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SyncData_Pull_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PullRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SyncDataServer).Pull(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SyncData_Pull_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SyncDataServer).Pull(ctx, req.(*PullRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _SyncData_PushStream_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(SyncDataServer).PushStream(&grpc.GenericServerStream[Push, PushResponse]{ServerStream: stream})
+	return srv.(SyncDataServer).PushStream(&grpc.GenericServerStream[Chunk, PushResponse]{ServerStream: stream})
 }
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type SyncData_PushStreamServer = grpc.ClientStreamingServer[Push, PushResponse]
+type SyncData_PushStreamServer = grpc.ClientStreamingServer[Chunk, PushResponse]
 
-func _SyncData_PollUnary_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(PollRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(SyncDataServer).PollUnary(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: SyncData_PollUnary_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SyncDataServer).PollUnary(ctx, req.(*PollRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _SyncData_PollStream_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(PollRequest)
+func _SyncData_PullStream_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(PullStreamRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(SyncDataServer).PollStream(m, &grpc.GenericServerStream[PollRequest, Poll]{ServerStream: stream})
+	return srv.(SyncDataServer).PullStream(m, &grpc.GenericServerStream[PullStreamRequest, Chunk]{ServerStream: stream})
 }
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type SyncData_PollStreamServer = grpc.ServerStreamingServer[Poll]
+type SyncData_PullStreamServer = grpc.ServerStreamingServer[Chunk]
 
 // SyncData_ServiceDesc is the grpc.ServiceDesc for SyncData service.
 // It's only intended for direct use with grpc.RegisterService,
@@ -208,12 +208,12 @@ var SyncData_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*SyncDataServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "PushUnary",
-			Handler:    _SyncData_PushUnary_Handler,
+			MethodName: "push",
+			Handler:    _SyncData_Push_Handler,
 		},
 		{
-			MethodName: "PollUnary",
-			Handler:    _SyncData_PollUnary_Handler,
+			MethodName: "pull",
+			Handler:    _SyncData_Pull_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
@@ -223,8 +223,8 @@ var SyncData_ServiceDesc = grpc.ServiceDesc{
 			ClientStreams: true,
 		},
 		{
-			StreamName:    "PollStream",
-			Handler:       _SyncData_PollStream_Handler,
+			StreamName:    "PullStream",
+			Handler:       _SyncData_PullStream_Handler,
 			ServerStreams: true,
 		},
 	},

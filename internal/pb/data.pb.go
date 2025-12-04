@@ -10,6 +10,7 @@ import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	_ "google.golang.org/protobuf/types/gofeaturespb"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	unsafe "unsafe"
 )
@@ -21,74 +22,68 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type RequestType int32
+type ChunkType int32
 
 const (
-	RequestType_Default   RequestType = 0
-	RequestType_StartData RequestType = 1
-	RequestType_FilePart  RequestType = 2
-	RequestType_EndData   RequestType = 3
-	RequestType_ErrData   RequestType = 4
+	ChunkType_FilePart ChunkType = 0
+	ChunkType_EndData  ChunkType = 1
+	ChunkType_ErrData  ChunkType = 2
 )
 
-// Enum value maps for RequestType.
+// Enum value maps for ChunkType.
 var (
-	RequestType_name = map[int32]string{
-		0: "Default",
-		1: "StartData",
-		2: "FilePart",
-		3: "EndData",
-		4: "ErrData",
+	ChunkType_name = map[int32]string{
+		0: "FilePart",
+		1: "EndData",
+		2: "ErrData",
 	}
-	RequestType_value = map[string]int32{
-		"Default":   0,
-		"StartData": 1,
-		"FilePart":  2,
-		"EndData":   3,
-		"ErrData":   4,
+	ChunkType_value = map[string]int32{
+		"FilePart": 0,
+		"EndData":  1,
+		"ErrData":  2,
 	}
 )
 
-func (x RequestType) Enum() *RequestType {
-	p := new(RequestType)
+func (x ChunkType) Enum() *ChunkType {
+	p := new(ChunkType)
 	*p = x
 	return p
 }
 
-func (x RequestType) String() string {
+func (x ChunkType) String() string {
 	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
 }
 
-func (RequestType) Descriptor() protoreflect.EnumDescriptor {
+func (ChunkType) Descriptor() protoreflect.EnumDescriptor {
 	return file_app_api_proto_data_proto_enumTypes[0].Descriptor()
 }
 
-func (RequestType) Type() protoreflect.EnumType {
+func (ChunkType) Type() protoreflect.EnumType {
 	return &file_app_api_proto_data_proto_enumTypes[0]
 }
 
-func (x RequestType) Number() protoreflect.EnumNumber {
+func (x ChunkType) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-type Data_DataType int32
+type Secret_DataType int32
 
 const (
-	Data_LoginPass Data_DataType = 0
-	Data_Text      Data_DataType = 1
-	Data_BankCard  Data_DataType = 2
-	Data_Other     Data_DataType = 3
+	Secret_LoginPass Secret_DataType = 0
+	Secret_Text      Secret_DataType = 1
+	Secret_BankCard  Secret_DataType = 2
+	Secret_Other     Secret_DataType = 3
 )
 
-// Enum value maps for Data_DataType.
+// Enum value maps for Secret_DataType.
 var (
-	Data_DataType_name = map[int32]string{
+	Secret_DataType_name = map[int32]string{
 		0: "LoginPass",
 		1: "Text",
 		2: "BankCard",
 		3: "Other",
 	}
-	Data_DataType_value = map[string]int32{
+	Secret_DataType_value = map[string]int32{
 		"LoginPass": 0,
 		"Text":      1,
 		"BankCard":  2,
@@ -96,61 +91,58 @@ var (
 	}
 )
 
-func (x Data_DataType) Enum() *Data_DataType {
-	p := new(Data_DataType)
+func (x Secret_DataType) Enum() *Secret_DataType {
+	p := new(Secret_DataType)
 	*p = x
 	return p
 }
 
-func (x Data_DataType) String() string {
+func (x Secret_DataType) String() string {
 	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
 }
 
-func (Data_DataType) Descriptor() protoreflect.EnumDescriptor {
+func (Secret_DataType) Descriptor() protoreflect.EnumDescriptor {
 	return file_app_api_proto_data_proto_enumTypes[1].Descriptor()
 }
 
-func (Data_DataType) Type() protoreflect.EnumType {
+func (Secret_DataType) Type() protoreflect.EnumType {
 	return &file_app_api_proto_data_proto_enumTypes[1]
 }
 
-func (x Data_DataType) Number() protoreflect.EnumNumber {
+func (x Secret_DataType) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-type Data struct {
-	state                    protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id            *string                `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Name          *string                `protobuf:"bytes,2,opt,name=name"`
-	xxx_hidden_Type          Data_DataType          `protobuf:"varint,3,opt,name=type,enum=go.Data_DataType"`
-	xxx_hidden_Large         bool                   `protobuf:"varint,4,opt,name=large"`
-	xxx_hidden_DekNonce      []byte                 `protobuf:"bytes,5,opt,name=dek_nonce,json=dekNonce"`
-	xxx_hidden_Dek           []byte                 `protobuf:"bytes,6,opt,name=dek"`
-	xxx_hidden_DataNonce     []byte                 `protobuf:"bytes,7,opt,name=data_nonce,json=dataNonce"`
-	xxx_hidden_Data          []byte                 `protobuf:"bytes,8,opt,name=data"`
-	xxx_hidden_FileDataNonce []byte                 `protobuf:"bytes,9,opt,name=file_data_nonce,json=fileDataNonce"`
-	xxx_hidden_Version       int32                  `protobuf:"varint,10,opt,name=version"`
-	xxx_hidden_Deleted       bool                   `protobuf:"varint,11,opt,name=deleted"`
-	XXX_raceDetectHookData   protoimpl.RaceDetectHookData
-	XXX_presence             [1]uint32
-	unknownFields            protoimpl.UnknownFields
-	sizeCache                protoimpl.SizeCache
+type Secret struct {
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_ModifiedAt  *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=modified_at,json=modifiedAt"`
+	xxx_hidden_Type        Secret_DataType        `protobuf:"varint,3,opt,name=type,enum=go.Secret_DataType"`
+	xxx_hidden_IsBig       bool                   `protobuf:"varint,4,opt,name=is_big,json=isBig"`
+	xxx_hidden_Version     int32                  `protobuf:"varint,5,opt,name=version"`
+	xxx_hidden_Deleted     bool                   `protobuf:"varint,6,opt,name=deleted"`
+	xxx_hidden_Dek         []byte                 `protobuf:"bytes,7,opt,name=dek"`
+	xxx_hidden_Data        []byte                 `protobuf:"bytes,8,opt,name=data"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
-func (x *Data) Reset() {
-	*x = Data{}
+func (x *Secret) Reset() {
+	*x = Secret{}
 	mi := &file_app_api_proto_data_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Data) String() string {
+func (x *Secret) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Data) ProtoMessage() {}
+func (*Secret) ProtoMessage() {}
 
-func (x *Data) ProtoReflect() protoreflect.Message {
+func (x *Secret) ProtoReflect() protoreflect.Message {
 	mi := &file_app_api_proto_data_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -162,7 +154,7 @@ func (x *Data) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-func (x *Data) GetId() string {
+func (x *Secret) GetId() string {
 	if x != nil {
 		if x.xxx_hidden_Id != nil {
 			return *x.xxx_hidden_Id
@@ -172,355 +164,254 @@ func (x *Data) GetId() string {
 	return ""
 }
 
-func (x *Data) GetName() string {
+func (x *Secret) GetModifiedAt() *timestamppb.Timestamp {
 	if x != nil {
-		if x.xxx_hidden_Name != nil {
-			return *x.xxx_hidden_Name
-		}
-		return ""
+		return x.xxx_hidden_ModifiedAt
 	}
-	return ""
+	return nil
 }
 
-func (x *Data) GetType() Data_DataType {
+func (x *Secret) GetType() Secret_DataType {
 	if x != nil {
 		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
 			return x.xxx_hidden_Type
 		}
 	}
-	return Data_LoginPass
+	return Secret_LoginPass
 }
 
-func (x *Data) GetLarge() bool {
+func (x *Secret) GetIsBig() bool {
 	if x != nil {
-		return x.xxx_hidden_Large
+		return x.xxx_hidden_IsBig
 	}
 	return false
 }
 
-func (x *Data) GetDekNonce() []byte {
-	if x != nil {
-		return x.xxx_hidden_DekNonce
-	}
-	return nil
-}
-
-func (x *Data) GetDek() []byte {
-	if x != nil {
-		return x.xxx_hidden_Dek
-	}
-	return nil
-}
-
-func (x *Data) GetDataNonce() []byte {
-	if x != nil {
-		return x.xxx_hidden_DataNonce
-	}
-	return nil
-}
-
-func (x *Data) GetData() []byte {
-	if x != nil {
-		return x.xxx_hidden_Data
-	}
-	return nil
-}
-
-func (x *Data) GetFileDataNonce() []byte {
-	if x != nil {
-		return x.xxx_hidden_FileDataNonce
-	}
-	return nil
-}
-
-func (x *Data) GetVersion() int32 {
+func (x *Secret) GetVersion() int32 {
 	if x != nil {
 		return x.xxx_hidden_Version
 	}
 	return 0
 }
 
-func (x *Data) GetDeleted() bool {
+func (x *Secret) GetDeleted() bool {
 	if x != nil {
 		return x.xxx_hidden_Deleted
 	}
 	return false
 }
 
-func (x *Data) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 11)
-}
-
-func (x *Data) SetName(v string) {
-	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 11)
-}
-
-func (x *Data) SetType(v Data_DataType) {
-	x.xxx_hidden_Type = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 11)
-}
-
-func (x *Data) SetLarge(v bool) {
-	x.xxx_hidden_Large = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 11)
-}
-
-func (x *Data) SetDekNonce(v []byte) {
-	if v == nil {
-		v = []byte{}
+func (x *Secret) GetDek() []byte {
+	if x != nil {
+		return x.xxx_hidden_Dek
 	}
-	x.xxx_hidden_DekNonce = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 11)
+	return nil
 }
 
-func (x *Data) SetDek(v []byte) {
+func (x *Secret) GetData() []byte {
+	if x != nil {
+		return x.xxx_hidden_Data
+	}
+	return nil
+}
+
+func (x *Secret) SetId(v string) {
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 8)
+}
+
+func (x *Secret) SetModifiedAt(v *timestamppb.Timestamp) {
+	x.xxx_hidden_ModifiedAt = v
+}
+
+func (x *Secret) SetType(v Secret_DataType) {
+	x.xxx_hidden_Type = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 8)
+}
+
+func (x *Secret) SetIsBig(v bool) {
+	x.xxx_hidden_IsBig = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 8)
+}
+
+func (x *Secret) SetVersion(v int32) {
+	x.xxx_hidden_Version = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 8)
+}
+
+func (x *Secret) SetDeleted(v bool) {
+	x.xxx_hidden_Deleted = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 8)
+}
+
+func (x *Secret) SetDek(v []byte) {
 	if v == nil {
 		v = []byte{}
 	}
 	x.xxx_hidden_Dek = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 11)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 8)
 }
 
-func (x *Data) SetDataNonce(v []byte) {
-	if v == nil {
-		v = []byte{}
-	}
-	x.xxx_hidden_DataNonce = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 11)
-}
-
-func (x *Data) SetData(v []byte) {
+func (x *Secret) SetData(v []byte) {
 	if v == nil {
 		v = []byte{}
 	}
 	x.xxx_hidden_Data = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 11)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 8)
 }
 
-func (x *Data) SetFileDataNonce(v []byte) {
-	if v == nil {
-		v = []byte{}
-	}
-	x.xxx_hidden_FileDataNonce = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 11)
-}
-
-func (x *Data) SetVersion(v int32) {
-	x.xxx_hidden_Version = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 9, 11)
-}
-
-func (x *Data) SetDeleted(v bool) {
-	x.xxx_hidden_Deleted = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 10, 11)
-}
-
-func (x *Data) HasId() bool {
+func (x *Secret) HasId() bool {
 	if x == nil {
 		return false
 	}
 	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
-func (x *Data) HasName() bool {
+func (x *Secret) HasModifiedAt() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
+	return x.xxx_hidden_ModifiedAt != nil
 }
 
-func (x *Data) HasType() bool {
+func (x *Secret) HasType() bool {
 	if x == nil {
 		return false
 	}
 	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
-func (x *Data) HasLarge() bool {
+func (x *Secret) HasIsBig() bool {
 	if x == nil {
 		return false
 	}
 	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
-func (x *Data) HasDekNonce() bool {
+func (x *Secret) HasVersion() bool {
 	if x == nil {
 		return false
 	}
 	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
-func (x *Data) HasDek() bool {
+func (x *Secret) HasDeleted() bool {
 	if x == nil {
 		return false
 	}
 	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
 }
 
-func (x *Data) HasDataNonce() bool {
+func (x *Secret) HasDek() bool {
 	if x == nil {
 		return false
 	}
 	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
 }
 
-func (x *Data) HasData() bool {
+func (x *Secret) HasData() bool {
 	if x == nil {
 		return false
 	}
 	return protoimpl.X.Present(&(x.XXX_presence[0]), 7)
 }
 
-func (x *Data) HasFileDataNonce() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 8)
-}
-
-func (x *Data) HasVersion() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 9)
-}
-
-func (x *Data) HasDeleted() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 10)
-}
-
-func (x *Data) ClearId() {
+func (x *Secret) ClearId() {
 	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
 	x.xxx_hidden_Id = nil
 }
 
-func (x *Data) ClearName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Name = nil
+func (x *Secret) ClearModifiedAt() {
+	x.xxx_hidden_ModifiedAt = nil
 }
 
-func (x *Data) ClearType() {
+func (x *Secret) ClearType() {
 	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_Type = Data_LoginPass
+	x.xxx_hidden_Type = Secret_LoginPass
 }
 
-func (x *Data) ClearLarge() {
+func (x *Secret) ClearIsBig() {
 	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_Large = false
+	x.xxx_hidden_IsBig = false
 }
 
-func (x *Data) ClearDekNonce() {
+func (x *Secret) ClearVersion() {
 	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_DekNonce = nil
+	x.xxx_hidden_Version = 0
 }
 
-func (x *Data) ClearDek() {
+func (x *Secret) ClearDeleted() {
 	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	x.xxx_hidden_Deleted = false
+}
+
+func (x *Secret) ClearDek() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
 	x.xxx_hidden_Dek = nil
 }
 
-func (x *Data) ClearDataNonce() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
-	x.xxx_hidden_DataNonce = nil
-}
-
-func (x *Data) ClearData() {
+func (x *Secret) ClearData() {
 	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
 	x.xxx_hidden_Data = nil
 }
 
-func (x *Data) ClearFileDataNonce() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
-	x.xxx_hidden_FileDataNonce = nil
-}
-
-func (x *Data) ClearVersion() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 9)
-	x.xxx_hidden_Version = 0
-}
-
-func (x *Data) ClearDeleted() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 10)
-	x.xxx_hidden_Deleted = false
-}
-
-type Data_builder struct {
+type Secret_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id            *string
-	Name          *string
-	Type          *Data_DataType
-	Large         *bool
-	DekNonce      []byte
-	Dek           []byte
-	DataNonce     []byte
-	Data          []byte
-	FileDataNonce []byte
-	Version       *int32
-	Deleted       *bool
+	Id         *string
+	ModifiedAt *timestamppb.Timestamp
+	Type       *Secret_DataType
+	IsBig      *bool
+	Version    *int32
+	Deleted    *bool
+	Dek        []byte
+	Data       []byte
 }
 
-func (b0 Data_builder) Build() *Data {
-	m0 := &Data{}
+func (b0 Secret_builder) Build() *Secret {
+	m0 := &Secret{}
 	b, x := &b0, m0
 	_, _ = b, x
 	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 11)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 8)
 		x.xxx_hidden_Id = b.Id
 	}
-	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 11)
-		x.xxx_hidden_Name = b.Name
-	}
+	x.xxx_hidden_ModifiedAt = b.ModifiedAt
 	if b.Type != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 11)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 8)
 		x.xxx_hidden_Type = *b.Type
 	}
-	if b.Large != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 11)
-		x.xxx_hidden_Large = *b.Large
-	}
-	if b.DekNonce != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 11)
-		x.xxx_hidden_DekNonce = b.DekNonce
-	}
-	if b.Dek != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 11)
-		x.xxx_hidden_Dek = b.Dek
-	}
-	if b.DataNonce != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 11)
-		x.xxx_hidden_DataNonce = b.DataNonce
-	}
-	if b.Data != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 11)
-		x.xxx_hidden_Data = b.Data
-	}
-	if b.FileDataNonce != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 11)
-		x.xxx_hidden_FileDataNonce = b.FileDataNonce
+	if b.IsBig != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 8)
+		x.xxx_hidden_IsBig = *b.IsBig
 	}
 	if b.Version != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 11)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 8)
 		x.xxx_hidden_Version = *b.Version
 	}
 	if b.Deleted != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 10, 11)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 8)
 		x.xxx_hidden_Deleted = *b.Deleted
+	}
+	if b.Dek != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 8)
+		x.xxx_hidden_Dek = b.Dek
+	}
+	if b.Data != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 8)
+		x.xxx_hidden_Data = b.Data
 	}
 	return m0
 }
 
 type PushRequest struct {
-	state           protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Data *[]*Data               `protobuf:"bytes,1,rep,name=data"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Secrets     *[]*Secret             `protobuf:"bytes,1,rep,name=secrets"`
+	xxx_hidden_Force       bool                   `protobuf:"varint,2,opt,name=force"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *PushRequest) Reset() {
@@ -548,58 +439,89 @@ func (x *PushRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-func (x *PushRequest) GetData() []*Data {
+func (x *PushRequest) GetSecrets() []*Secret {
 	if x != nil {
-		if x.xxx_hidden_Data != nil {
-			return *x.xxx_hidden_Data
+		if x.xxx_hidden_Secrets != nil {
+			return *x.xxx_hidden_Secrets
 		}
 	}
 	return nil
 }
 
-func (x *PushRequest) SetData(v []*Data) {
-	x.xxx_hidden_Data = &v
+func (x *PushRequest) GetForce() bool {
+	if x != nil {
+		return x.xxx_hidden_Force
+	}
+	return false
+}
+
+func (x *PushRequest) SetSecrets(v []*Secret) {
+	x.xxx_hidden_Secrets = &v
+}
+
+func (x *PushRequest) SetForce(v bool) {
+	x.xxx_hidden_Force = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
+}
+
+func (x *PushRequest) HasForce() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
+}
+
+func (x *PushRequest) ClearForce() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Force = false
 }
 
 type PushRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Data []*Data
+	Secrets []*Secret
+	Force   *bool
 }
 
 func (b0 PushRequest_builder) Build() *PushRequest {
 	m0 := &PushRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Data = &b.Data
+	x.xxx_hidden_Secrets = &b.Secrets
+	if b.Force != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Force = *b.Force
+	}
 	return m0
 }
 
-type Push struct {
+type Chunk struct {
 	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Data        *Data                  `protobuf:"bytes,1,opt,name=data"`
-	xxx_hidden_Type        RequestType            `protobuf:"varint,2,opt,name=type,enum=go.RequestType"`
-	xxx_hidden_Chunk       []byte                 `protobuf:"bytes,3,opt,name=chunk"`
+	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Type        ChunkType              `protobuf:"varint,2,opt,name=type,enum=go.ChunkType"`
+	xxx_hidden_Buffer      []byte                 `protobuf:"bytes,3,opt,name=buffer"`
+	xxx_hidden_Version     int32                  `protobuf:"varint,4,opt,name=version"`
+	xxx_hidden_Secret      *Secret                `protobuf:"bytes,5,opt,name=secret"`
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
 
-func (x *Push) Reset() {
-	*x = Push{}
+func (x *Chunk) Reset() {
+	*x = Chunk{}
 	mi := &file_app_api_proto_data_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Push) String() string {
+func (x *Chunk) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Push) ProtoMessage() {}
+func (*Chunk) ProtoMessage() {}
 
-func (x *Push) ProtoReflect() protoreflect.Message {
+func (x *Chunk) ProtoReflect() protoreflect.Message {
 	mi := &file_app_api_proto_data_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -611,102 +533,163 @@ func (x *Push) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-func (x *Push) GetData() *Data {
+func (x *Chunk) GetId() string {
 	if x != nil {
-		return x.xxx_hidden_Data
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
 	}
-	return nil
+	return ""
 }
 
-func (x *Push) GetType() RequestType {
+func (x *Chunk) GetType() ChunkType {
 	if x != nil {
 		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
 			return x.xxx_hidden_Type
 		}
 	}
-	return RequestType_Default
+	return ChunkType_FilePart
 }
 
-func (x *Push) GetChunk() []byte {
+func (x *Chunk) GetBuffer() []byte {
 	if x != nil {
-		return x.xxx_hidden_Chunk
+		return x.xxx_hidden_Buffer
 	}
 	return nil
 }
 
-func (x *Push) SetData(v *Data) {
-	x.xxx_hidden_Data = v
+func (x *Chunk) GetVersion() int32 {
+	if x != nil {
+		return x.xxx_hidden_Version
+	}
+	return 0
 }
 
-func (x *Push) SetType(v RequestType) {
+func (x *Chunk) GetSecret() *Secret {
+	if x != nil {
+		return x.xxx_hidden_Secret
+	}
+	return nil
+}
+
+func (x *Chunk) SetId(v string) {
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 5)
+}
+
+func (x *Chunk) SetType(v ChunkType) {
 	x.xxx_hidden_Type = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 5)
 }
 
-func (x *Push) SetChunk(v []byte) {
+func (x *Chunk) SetBuffer(v []byte) {
 	if v == nil {
 		v = []byte{}
 	}
-	x.xxx_hidden_Chunk = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
+	x.xxx_hidden_Buffer = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 5)
 }
 
-func (x *Push) HasData() bool {
+func (x *Chunk) SetVersion(v int32) {
+	x.xxx_hidden_Version = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 5)
+}
+
+func (x *Chunk) SetSecret(v *Secret) {
+	x.xxx_hidden_Secret = v
+}
+
+func (x *Chunk) HasId() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Data != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
-func (x *Push) HasType() bool {
+func (x *Chunk) HasType() bool {
 	if x == nil {
 		return false
 	}
 	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
-func (x *Push) HasChunk() bool {
+func (x *Chunk) HasBuffer() bool {
 	if x == nil {
 		return false
 	}
 	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
-func (x *Push) ClearData() {
-	x.xxx_hidden_Data = nil
+func (x *Chunk) HasVersion() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
-func (x *Push) ClearType() {
+func (x *Chunk) HasSecret() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Secret != nil
+}
+
+func (x *Chunk) ClearId() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
+}
+
+func (x *Chunk) ClearType() {
 	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Type = RequestType_Default
+	x.xxx_hidden_Type = ChunkType_FilePart
 }
 
-func (x *Push) ClearChunk() {
+func (x *Chunk) ClearBuffer() {
 	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_Chunk = nil
+	x.xxx_hidden_Buffer = nil
 }
 
-type Push_builder struct {
+func (x *Chunk) ClearVersion() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_Version = 0
+}
+
+func (x *Chunk) ClearSecret() {
+	x.xxx_hidden_Secret = nil
+}
+
+type Chunk_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Data  *Data
-	Type  *RequestType
-	Chunk []byte
+	Id      *string
+	Type    *ChunkType
+	Buffer  []byte
+	Version *int32
+	Secret  *Secret
 }
 
-func (b0 Push_builder) Build() *Push {
-	m0 := &Push{}
+func (b0 Chunk_builder) Build() *Chunk {
+	m0 := &Chunk{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Data = b.Data
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 5)
+		x.xxx_hidden_Id = b.Id
+	}
 	if b.Type != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 5)
 		x.xxx_hidden_Type = *b.Type
 	}
-	if b.Chunk != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
-		x.xxx_hidden_Chunk = b.Chunk
+	if b.Buffer != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 5)
+		x.xxx_hidden_Buffer = b.Buffer
 	}
+	if b.Version != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 5)
+		x.xxx_hidden_Version = *b.Version
+	}
+	x.xxx_hidden_Secret = b.Secret
 	return m0
 }
 
@@ -785,29 +768,29 @@ func (b0 PushResponse_builder) Build() *PushResponse {
 	return m0
 }
 
-type PollRequest struct {
+type PullRequest struct {
 	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Since       int32                  `protobuf:"varint,1,opt,name=since"`
+	xxx_hidden_Since       int32                  `protobuf:"varint,2,opt,name=since"`
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
 
-func (x *PollRequest) Reset() {
-	*x = PollRequest{}
+func (x *PullRequest) Reset() {
+	*x = PullRequest{}
 	mi := &file_app_api_proto_data_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *PollRequest) String() string {
+func (x *PullRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*PollRequest) ProtoMessage() {}
+func (*PullRequest) ProtoMessage() {}
 
-func (x *PollRequest) ProtoReflect() protoreflect.Message {
+func (x *PullRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_app_api_proto_data_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -819,38 +802,38 @@ func (x *PollRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-func (x *PollRequest) GetSince() int32 {
+func (x *PullRequest) GetSince() int32 {
 	if x != nil {
 		return x.xxx_hidden_Since
 	}
 	return 0
 }
 
-func (x *PollRequest) SetSince(v int32) {
+func (x *PullRequest) SetSince(v int32) {
 	x.xxx_hidden_Since = v
 	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
 }
 
-func (x *PollRequest) HasSince() bool {
+func (x *PullRequest) HasSince() bool {
 	if x == nil {
 		return false
 	}
 	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
-func (x *PollRequest) ClearSince() {
+func (x *PullRequest) ClearSince() {
 	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
 	x.xxx_hidden_Since = 0
 }
 
-type PollRequest_builder struct {
+type PullRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	Since *int32
 }
 
-func (b0 PollRequest_builder) Build() *PollRequest {
-	m0 := &PollRequest{}
+func (b0 PullRequest_builder) Build() *PullRequest {
+	m0 := &PullRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
 	if b.Since != nil {
@@ -860,30 +843,30 @@ func (b0 PollRequest_builder) Build() *PollRequest {
 	return m0
 }
 
-type PollResponse struct {
-	state                    protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_ServerVersion int32                  `protobuf:"varint,1,opt,name=server_version,json=serverVersion"`
-	xxx_hidden_Data          *[]*Data               `protobuf:"bytes,2,rep,name=data"`
-	XXX_raceDetectHookData   protoimpl.RaceDetectHookData
-	XXX_presence             [1]uint32
-	unknownFields            protoimpl.UnknownFields
-	sizeCache                protoimpl.SizeCache
+type PullResponse struct {
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Secrets     *[]*Secret             `protobuf:"bytes,1,rep,name=secrets"`
+	xxx_hidden_Version     int32                  `protobuf:"varint,2,opt,name=version"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
-func (x *PollResponse) Reset() {
-	*x = PollResponse{}
+func (x *PullResponse) Reset() {
+	*x = PullResponse{}
 	mi := &file_app_api_proto_data_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *PollResponse) String() string {
+func (x *PullResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*PollResponse) ProtoMessage() {}
+func (*PullResponse) ProtoMessage() {}
 
-func (x *PollResponse) ProtoReflect() protoreflect.Message {
+func (x *PullResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_app_api_proto_data_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -895,223 +878,166 @@ func (x *PollResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-func (x *PollResponse) GetServerVersion() int32 {
+func (x *PullResponse) GetSecrets() []*Secret {
 	if x != nil {
-		return x.xxx_hidden_ServerVersion
+		if x.xxx_hidden_Secrets != nil {
+			return *x.xxx_hidden_Secrets
+		}
+	}
+	return nil
+}
+
+func (x *PullResponse) GetVersion() int32 {
+	if x != nil {
+		return x.xxx_hidden_Version
 	}
 	return 0
 }
 
-func (x *PollResponse) GetData() []*Data {
-	if x != nil {
-		if x.xxx_hidden_Data != nil {
-			return *x.xxx_hidden_Data
-		}
-	}
-	return nil
+func (x *PullResponse) SetSecrets(v []*Secret) {
+	x.xxx_hidden_Secrets = &v
 }
 
-func (x *PollResponse) SetServerVersion(v int32) {
-	x.xxx_hidden_ServerVersion = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+func (x *PullResponse) SetVersion(v int32) {
+	x.xxx_hidden_Version = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
-func (x *PollResponse) SetData(v []*Data) {
-	x.xxx_hidden_Data = &v
-}
-
-func (x *PollResponse) HasServerVersion() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *PollResponse) ClearServerVersion() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_ServerVersion = 0
-}
-
-type PollResponse_builder struct {
-	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
-
-	ServerVersion *int32
-	Data          []*Data
-}
-
-func (b0 PollResponse_builder) Build() *PollResponse {
-	m0 := &PollResponse{}
-	b, x := &b0, m0
-	_, _ = b, x
-	if b.ServerVersion != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_ServerVersion = *b.ServerVersion
-	}
-	x.xxx_hidden_Data = &b.Data
-	return m0
-}
-
-type Poll struct {
-	state                    protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_ServerVersion int32                  `protobuf:"varint,1,opt,name=server_version,json=serverVersion"`
-	xxx_hidden_Type          RequestType            `protobuf:"varint,2,opt,name=type,enum=go.RequestType"`
-	xxx_hidden_Data          *Data                  `protobuf:"bytes,3,opt,name=data"`
-	xxx_hidden_Chunk         []byte                 `protobuf:"bytes,4,opt,name=chunk"`
-	XXX_raceDetectHookData   protoimpl.RaceDetectHookData
-	XXX_presence             [1]uint32
-	unknownFields            protoimpl.UnknownFields
-	sizeCache                protoimpl.SizeCache
-}
-
-func (x *Poll) Reset() {
-	*x = Poll{}
-	mi := &file_app_api_proto_data_proto_msgTypes[6]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *Poll) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Poll) ProtoMessage() {}
-
-func (x *Poll) ProtoReflect() protoreflect.Message {
-	mi := &file_app_api_proto_data_proto_msgTypes[6]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-func (x *Poll) GetServerVersion() int32 {
-	if x != nil {
-		return x.xxx_hidden_ServerVersion
-	}
-	return 0
-}
-
-func (x *Poll) GetType() RequestType {
-	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			return x.xxx_hidden_Type
-		}
-	}
-	return RequestType_Default
-}
-
-func (x *Poll) GetData() *Data {
-	if x != nil {
-		return x.xxx_hidden_Data
-	}
-	return nil
-}
-
-func (x *Poll) GetChunk() []byte {
-	if x != nil {
-		return x.xxx_hidden_Chunk
-	}
-	return nil
-}
-
-func (x *Poll) SetServerVersion(v int32) {
-	x.xxx_hidden_ServerVersion = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
-}
-
-func (x *Poll) SetType(v RequestType) {
-	x.xxx_hidden_Type = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
-}
-
-func (x *Poll) SetData(v *Data) {
-	x.xxx_hidden_Data = v
-}
-
-func (x *Poll) SetChunk(v []byte) {
-	if v == nil {
-		v = []byte{}
-	}
-	x.xxx_hidden_Chunk = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
-}
-
-func (x *Poll) HasServerVersion() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *Poll) HasType() bool {
+func (x *PullResponse) HasVersion() bool {
 	if x == nil {
 		return false
 	}
 	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
-func (x *Poll) HasData() bool {
-	if x == nil {
-		return false
-	}
-	return x.xxx_hidden_Data != nil
-}
-
-func (x *Poll) HasChunk() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *Poll) ClearServerVersion() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_ServerVersion = 0
-}
-
-func (x *Poll) ClearType() {
+func (x *PullResponse) ClearVersion() {
 	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Type = RequestType_Default
+	x.xxx_hidden_Version = 0
 }
 
-func (x *Poll) ClearData() {
-	x.xxx_hidden_Data = nil
-}
-
-func (x *Poll) ClearChunk() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_Chunk = nil
-}
-
-type Poll_builder struct {
+type PullResponse_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	ServerVersion *int32
-	Type          *RequestType
-	Data          *Data
-	Chunk         []byte
+	Secrets []*Secret
+	Version *int32
 }
 
-func (b0 Poll_builder) Build() *Poll {
-	m0 := &Poll{}
+func (b0 PullResponse_builder) Build() *PullResponse {
+	m0 := &PullResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.ServerVersion != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
-		x.xxx_hidden_ServerVersion = *b.ServerVersion
+	x.xxx_hidden_Secrets = &b.Secrets
+	if b.Version != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Version = *b.Version
 	}
-	if b.Type != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
-		x.xxx_hidden_Type = *b.Type
+	return m0
+}
+
+type PullStreamRequest struct {
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Version     int32                  `protobuf:"varint,2,opt,name=version"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
+}
+
+func (x *PullStreamRequest) Reset() {
+	*x = PullStreamRequest{}
+	mi := &file_app_api_proto_data_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PullStreamRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PullStreamRequest) ProtoMessage() {}
+
+func (x *PullStreamRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_app_api_proto_data_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
 	}
-	x.xxx_hidden_Data = b.Data
-	if b.Chunk != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
-		x.xxx_hidden_Chunk = b.Chunk
+	return mi.MessageOf(x)
+}
+
+func (x *PullStreamRequest) GetId() string {
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
+	}
+	return ""
+}
+
+func (x *PullStreamRequest) GetVersion() int32 {
+	if x != nil {
+		return x.xxx_hidden_Version
+	}
+	return 0
+}
+
+func (x *PullStreamRequest) SetId(v string) {
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+}
+
+func (x *PullStreamRequest) SetVersion(v int32) {
+	x.xxx_hidden_Version = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
+}
+
+func (x *PullStreamRequest) HasId() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+}
+
+func (x *PullStreamRequest) HasVersion() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
+}
+
+func (x *PullStreamRequest) ClearId() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
+}
+
+func (x *PullStreamRequest) ClearVersion() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Version = 0
+}
+
+type PullStreamRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Id      *string
+	Version *int32
+}
+
+func (b0 PullStreamRequest_builder) Build() *PullStreamRequest {
+	m0 := &PullStreamRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Id = b.Id
+	}
+	if b.Version != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Version = *b.Version
 	}
 	return m0
 }
@@ -1120,92 +1046,90 @@ var File_app_api_proto_data_proto protoreflect.FileDescriptor
 
 const file_app_api_proto_data_proto_rawDesc = "" +
 	"\n" +
-	"\x18app/api/proto/data.proto\x12\x02go\x1a!google/protobuf/go_features.proto\"\xe3\x02\n" +
-	"\x04Data\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\x12%\n" +
-	"\x04type\x18\x03 \x01(\x0e2\x11.go.Data.DataTypeR\x04type\x12\x14\n" +
-	"\x05large\x18\x04 \x01(\bR\x05large\x12\x1b\n" +
-	"\tdek_nonce\x18\x05 \x01(\fR\bdekNonce\x12\x10\n" +
-	"\x03dek\x18\x06 \x01(\fR\x03dek\x12\x1d\n" +
-	"\n" +
-	"data_nonce\x18\a \x01(\fR\tdataNonce\x12\x12\n" +
-	"\x04data\x18\b \x01(\fR\x04data\x12&\n" +
-	"\x0ffile_data_nonce\x18\t \x01(\fR\rfileDataNonce\x12\x18\n" +
-	"\aversion\x18\n" +
-	" \x01(\x05R\aversion\x12\x18\n" +
-	"\adeleted\x18\v \x01(\bR\adeleted\"<\n" +
+	"\x18app/api/proto/data.proto\x12\x02go\x1a\x1fgoogle/protobuf/timestamp.proto\x1a!google/protobuf/go_features.proto\"\xad\x02\n" +
+	"\x06Secret\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12;\n" +
+	"\vmodified_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"modifiedAt\x12'\n" +
+	"\x04type\x18\x03 \x01(\x0e2\x13.go.Secret.DataTypeR\x04type\x12\x15\n" +
+	"\x06is_big\x18\x04 \x01(\bR\x05isBig\x12\x18\n" +
+	"\aversion\x18\x05 \x01(\x05R\aversion\x12\x18\n" +
+	"\adeleted\x18\x06 \x01(\bR\adeleted\x12\x10\n" +
+	"\x03dek\x18\a \x01(\fR\x03dek\x12\x12\n" +
+	"\x04data\x18\b \x01(\fR\x04data\"<\n" +
 	"\bDataType\x12\r\n" +
 	"\tLoginPass\x10\x00\x12\b\n" +
 	"\x04Text\x10\x01\x12\f\n" +
 	"\bBankCard\x10\x02\x12\t\n" +
-	"\x05Other\x10\x03\"+\n" +
-	"\vPushRequest\x12\x1c\n" +
-	"\x04data\x18\x01 \x03(\v2\b.go.DataR\x04data\"_\n" +
-	"\x04Push\x12\x1c\n" +
-	"\x04data\x18\x01 \x01(\v2\b.go.DataR\x04data\x12#\n" +
-	"\x04type\x18\x02 \x01(\x0e2\x0f.go.RequestTypeR\x04type\x12\x14\n" +
-	"\x05chunk\x18\x03 \x01(\fR\x05chunk\"(\n" +
+	"\x05Other\x10\x03\"I\n" +
+	"\vPushRequest\x12$\n" +
+	"\asecrets\x18\x01 \x03(\v2\n" +
+	".go.SecretR\asecrets\x12\x14\n" +
+	"\x05force\x18\x02 \x01(\bR\x05force\"\x90\x01\n" +
+	"\x05Chunk\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12!\n" +
+	"\x04type\x18\x02 \x01(\x0e2\r.go.ChunkTypeR\x04type\x12\x16\n" +
+	"\x06buffer\x18\x03 \x01(\fR\x06buffer\x12\x18\n" +
+	"\aversion\x18\x04 \x01(\x05R\aversion\x12\"\n" +
+	"\x06secret\x18\x05 \x01(\v2\n" +
+	".go.SecretR\x06secret\"(\n" +
 	"\fPushResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\"#\n" +
-	"\vPollRequest\x12\x14\n" +
-	"\x05since\x18\x01 \x01(\x05R\x05since\"S\n" +
-	"\fPollResponse\x12%\n" +
-	"\x0eserver_version\x18\x01 \x01(\x05R\rserverVersion\x12\x1c\n" +
-	"\x04data\x18\x02 \x03(\v2\b.go.DataR\x04data\"\x86\x01\n" +
-	"\x04Poll\x12%\n" +
-	"\x0eserver_version\x18\x01 \x01(\x05R\rserverVersion\x12#\n" +
-	"\x04type\x18\x02 \x01(\x0e2\x0f.go.RequestTypeR\x04type\x12\x1c\n" +
-	"\x04data\x18\x03 \x01(\v2\b.go.DataR\x04data\x12\x14\n" +
-	"\x05chunk\x18\x04 \x01(\fR\x05chunk*Q\n" +
-	"\vRequestType\x12\v\n" +
-	"\aDefault\x10\x00\x12\r\n" +
-	"\tStartData\x10\x01\x12\f\n" +
-	"\bFilePart\x10\x02\x12\v\n" +
-	"\aEndData\x10\x03\x12\v\n" +
-	"\aErrData\x10\x042\xc1\x01\n" +
-	"\bSyncData\x12.\n" +
-	"\tPushUnary\x12\x0f.go.PushRequest\x1a\x10.go.PushResponse\x12*\n" +
+	"\vPullRequest\x12\x14\n" +
+	"\x05since\x18\x02 \x01(\x05R\x05since\"N\n" +
+	"\fPullResponse\x12$\n" +
+	"\asecrets\x18\x01 \x03(\v2\n" +
+	".go.SecretR\asecrets\x12\x18\n" +
+	"\aversion\x18\x02 \x01(\x05R\aversion\"=\n" +
+	"\x11PullStreamRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x18\n" +
+	"\aversion\x18\x02 \x01(\x05R\aversion*3\n" +
+	"\tChunkType\x12\f\n" +
+	"\bFilePart\x10\x00\x12\v\n" +
+	"\aEndData\x10\x01\x12\v\n" +
+	"\aErrData\x10\x022\xbf\x01\n" +
+	"\bSyncData\x12)\n" +
+	"\x04Push\x12\x0f.go.PushRequest\x1a\x10.go.PushResponse\x12)\n" +
+	"\x04Pull\x12\x0f.go.PullRequest\x1a\x10.go.PullResponse\x12+\n" +
 	"\n" +
-	"PushStream\x12\b.go.Push\x1a\x10.go.PushResponse(\x01\x12.\n" +
-	"\tPollUnary\x12\x0f.go.PollRequest\x1a\x10.go.PollResponse\x12)\n" +
+	"PushStream\x12\t.go.Chunk\x1a\x10.go.PushResponse(\x01\x120\n" +
 	"\n" +
-	"PollStream\x12\x0f.go.PollRequest\x1a\b.go.Poll0\x01B\rZ\x03/pb\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"PullStream\x12\x15.go.PullStreamRequest\x1a\t.go.Chunk0\x01B\rZ\x03/pb\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
 var file_app_api_proto_data_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_app_api_proto_data_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_app_api_proto_data_proto_goTypes = []any{
-	(RequestType)(0),     // 0: go.RequestType
-	(Data_DataType)(0),   // 1: go.Data.DataType
-	(*Data)(nil),         // 2: go.Data
-	(*PushRequest)(nil),  // 3: go.PushRequest
-	(*Push)(nil),         // 4: go.Push
-	(*PushResponse)(nil), // 5: go.PushResponse
-	(*PollRequest)(nil),  // 6: go.PollRequest
-	(*PollResponse)(nil), // 7: go.PollResponse
-	(*Poll)(nil),         // 8: go.Poll
+	(ChunkType)(0),                // 0: go.ChunkType
+	(Secret_DataType)(0),          // 1: go.Secret.DataType
+	(*Secret)(nil),                // 2: go.Secret
+	(*PushRequest)(nil),           // 3: go.PushRequest
+	(*Chunk)(nil),                 // 4: go.Chunk
+	(*PushResponse)(nil),          // 5: go.PushResponse
+	(*PullRequest)(nil),           // 6: go.PullRequest
+	(*PullResponse)(nil),          // 7: go.PullResponse
+	(*PullStreamRequest)(nil),     // 8: go.PullStreamRequest
+	(*timestamppb.Timestamp)(nil), // 9: google.protobuf.Timestamp
 }
 var file_app_api_proto_data_proto_depIdxs = []int32{
-	1,  // 0: go.Data.type:type_name -> go.Data.DataType
-	2,  // 1: go.PushRequest.data:type_name -> go.Data
-	2,  // 2: go.Push.data:type_name -> go.Data
-	0,  // 3: go.Push.type:type_name -> go.RequestType
-	2,  // 4: go.PollResponse.data:type_name -> go.Data
-	0,  // 5: go.Poll.type:type_name -> go.RequestType
-	2,  // 6: go.Poll.data:type_name -> go.Data
-	3,  // 7: go.SyncData.PushUnary:input_type -> go.PushRequest
-	4,  // 8: go.SyncData.PushStream:input_type -> go.Push
-	6,  // 9: go.SyncData.PollUnary:input_type -> go.PollRequest
-	6,  // 10: go.SyncData.PollStream:input_type -> go.PollRequest
-	5,  // 11: go.SyncData.PushUnary:output_type -> go.PushResponse
+	9,  // 0: go.Secret.modified_at:type_name -> google.protobuf.Timestamp
+	1,  // 1: go.Secret.type:type_name -> go.Secret.DataType
+	2,  // 2: go.PushRequest.secrets:type_name -> go.Secret
+	0,  // 3: go.Chunk.type:type_name -> go.ChunkType
+	2,  // 4: go.Chunk.secret:type_name -> go.Secret
+	2,  // 5: go.PullResponse.secrets:type_name -> go.Secret
+	3,  // 6: go.SyncData.push:input_type -> go.PushRequest
+	6,  // 7: go.SyncData.pull:input_type -> go.PullRequest
+	4,  // 8: go.SyncData.PushStream:input_type -> go.Chunk
+	8,  // 9: go.SyncData.PullStream:input_type -> go.PullStreamRequest
+	5,  // 10: go.SyncData.push:output_type -> go.PushResponse
+	7,  // 11: go.SyncData.pull:output_type -> go.PullResponse
 	5,  // 12: go.SyncData.PushStream:output_type -> go.PushResponse
-	7,  // 13: go.SyncData.PollUnary:output_type -> go.PollResponse
-	8,  // 14: go.SyncData.PollStream:output_type -> go.Poll
-	11, // [11:15] is the sub-list for method output_type
-	7,  // [7:11] is the sub-list for method input_type
-	7,  // [7:7] is the sub-list for extension type_name
-	7,  // [7:7] is the sub-list for extension extendee
-	0,  // [0:7] is the sub-list for field type_name
+	4,  // 13: go.SyncData.PullStream:output_type -> go.Chunk
+	10, // [10:14] is the sub-list for method output_type
+	6,  // [6:10] is the sub-list for method input_type
+	6,  // [6:6] is the sub-list for extension type_name
+	6,  // [6:6] is the sub-list for extension extendee
+	0,  // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_app_api_proto_data_proto_init() }

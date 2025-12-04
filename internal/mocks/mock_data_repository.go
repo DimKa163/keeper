@@ -134,7 +134,7 @@ func (m *MockDataService) EXPECT() *MockDataServiceMockRecorder {
 // Poll mocks base method.
 func (m *MockDataService) Poll(ctx context.Context, since int32) ([]*domain.Data, int32, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Poll", ctx, since)
+	ret := m.ctrl.Call(m, "pull", ctx, since)
 	ret0, _ := ret[0].([]*domain.Data)
 	ret1, _ := ret[1].(int32)
 	ret2, _ := ret[2].(error)
@@ -144,7 +144,7 @@ func (m *MockDataService) Poll(ctx context.Context, since int32) ([]*domain.Data
 // Poll indicates an expected call of Poll.
 func (mr *MockDataServiceMockRecorder) Poll(ctx, since interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Poll", reflect.TypeOf((*MockDataService)(nil).Poll), ctx, since)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "pull", reflect.TypeOf((*MockDataService)(nil).Poll), ctx, since)
 }
 
 // Push mocks base method.

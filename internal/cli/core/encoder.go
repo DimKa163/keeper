@@ -1,5 +1,5 @@
 package core
 
 type Encoder interface {
-	Encode(data, key []byte) ([]byte, []byte, error)
+	Encode(data, key []byte) ([]byte, error)
 }

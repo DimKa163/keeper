@@ -1,4 +1,4 @@
-package cli
+package app
 
 import (
 	"context"
@@ -78,12 +78,14 @@ func (rm *RemoteClient) TryToAuthenticate(ctx context.Context) error {
 		if code.Code() != codes.Unauthenticated {
 			return err
 		}
-		fmt.Println("logging failed. trying create a new user")
+		fmt.Println("authentification failed. trying create a new user")
 		if _, err = rm.Register(ctx, &us); err != nil {
 			return err
 		}
-		fmt.Println("new user was created successfully")
+		fmt.Println("✅ new user was created successfully")
+		return nil
 	}
+	fmt.Println("✅ authentification succeeded.")
 	return nil
 }
 

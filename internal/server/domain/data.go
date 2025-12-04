@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"time"
 
@@ -40,30 +41,24 @@ func (d DataType) String() string {
 }
 
 type Data struct {
-	ID            guid.Guid
-	CreatedAt     time.Time
-	ModifiedAt    time.Time
-	UserID        guid.Guid
-	Type          DataType
-	BigData       bool
-	DekNonce      []byte
-	Dek           []byte
-	PayloadNonce  []byte
-	Payload       []byte
-	FileDataNonce []byte
-	Path          string
-	Version       int32
-	Deleted       bool
+	ID         guid.Guid
+	CreatedAt  time.Time
+	ModifiedAt time.Time
+	UserID     guid.Guid
+	Type       DataType
+	BigData    bool
+	Dek        []byte
+	Payload    []byte
+	Path       string
+	Version    int32
+	Deleted    bool
 }
 
-func (sd *Data) Update(large bool, dekNonce, dek, dataNonce, data, fileData []byte, deleted bool, version int32) {
+func (sd *Data) Update(large bool, dek, data []byte, deleted bool, version int32) {
 	sd.ModifiedAt = time.Now()
 	sd.BigData = large
-	sd.DekNonce = dekNonce
 	sd.Dek = dek
-	sd.PayloadNonce = dataNonce
 	sd.Payload = data
-	sd.FileDataNonce = fileData
 	sd.Deleted = deleted
 	sd.Version = version
 }
@@ -85,9 +80,11 @@ type DataService interface {
 
 	PushMetadata(ctx context.Context, data *Data) error
 
-	PushData(ctx context.Context, id guid.Guid, data []byte) error
+	PushData(ctx context.Context, id guid.Guid, data []byte, version int32) error
 
-	Finish(ctx context.Context, id guid.Guid) error
+	Finish(ctx context.Context, id guid.Guid, version int32) error
+
+	OpenFile(fileName string) (io.ReadCloser, error)
 
 	Push(ctx context.Context, data []*Data) error
 

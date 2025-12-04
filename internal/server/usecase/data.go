@@ -3,7 +3,6 @@ package usecase
 import (
 	"context"
 	"errors"
-	"fmt"
 	"github.com/DimKa163/keeper/internal/server/domain"
 	"github.com/DimKa163/keeper/internal/server/infrastructure/persistence"
 	"github.com/DimKa163/keeper/internal/server/shared/auth"
@@ -12,13 +11,51 @@ import (
 	"github.com/beevik/guid"
 	"github.com/jackc/pgx/v5"
 	"go.uber.org/zap"
+	"io"
+	"os"
 	"reflect"
+	"time"
 )
 
 var syncTypeName = reflect.TypeOf(domain.Data{}).Name()
 
 var (
 	ErrDataConflict = errors.New("data conflict")
+)
+
+type (
+	Secret struct {
+		ID         guid.Guid `json:"id"`
+		ModifiedAt time.Time
+		UserID     guid.Guid `json:"user_id"`
+		Type       domain.DataType
+		BigData    bool   `json:"big_data"`
+		Dek        []byte `json:"dek"`
+		Payload    []byte `json:"payload"`
+		Deleted    bool   `json:"deleted"`
+		Version    int32  `json:"version"`
+	}
+	PushUnaryRequest struct {
+		Secrets []*Secret `json:"secrets"`
+		Force   bool
+	}
+	PushMetadataRequest struct {
+		ID      guid.Guid `json:"id"`
+		UserID  guid.Guid `json:"user_id"`
+		Type    domain.DataType
+		BigData bool `json:"big_data"`
+		Deleted bool `json:"deleted"`
+	}
+	PushChunkRequest struct {
+		ID     guid.Guid `json:"id"`
+		Buffer []byte    `json:"buffer"`
+	}
+	PushFileCloseRequest struct {
+		ID         guid.Guid `json:"id"`
+		ModifiedAt time.Time `json:"modified_at"`
+		Dek        []byte    `json:"dek"`
+		Payload    []byte    `json:"payload"`
+	}
 )
 
 type DataService struct {
@@ -30,9 +67,12 @@ func NewDataService(uow domain.UnitOfWork, fileProvider *shared.FileProvider) *D
 	return &DataService{unitOfWork: uow, fileProvider: fileProvider}
 }
 
-func (ds *DataService) PushUnary(ctx context.Context, data *domain.Data) error {
+func (ds *DataService) Push(ctx context.Context, request *PushUnaryRequest) error {
+	if len(request.Secrets) == 0 {
+		return errors.New("empty request")
+	}
 	logger := logging.Logger(ctx)
-	logger.Info("pushing data")
+	logger.Info("pushing request")
 	if err := ds.unitOfWork.Tx(ctx, func(ctx context.Context, work domain.UnitOfWork) error {
 		logger := logging.Logger(ctx)
 		userId, err := auth.User(ctx)
@@ -42,22 +82,24 @@ func (ds *DataService) PushUnary(ctx context.Context, data *domain.Data) error {
 		stateRepository := work.SyncStateRepository()
 		state, err := stateRepository.Get(ctx, syncTypeName, userId)
 		if err != nil {
-			if !errors.Is(err, pgx.ErrNoRows) {
-				logger.Error("failed to get state", zap.Error(err))
-				return err
-			}
-			state = &domain.SyncState{
-				ID:    syncTypeName,
-				Value: 0,
-			}
+			return err
 		}
 		logger = logger.With(zap.Int32("version", state.Value))
 		ctx = logging.SetLogger(ctx, logger)
-		dataRepository := work.DataRepository()
-		if err = ds.process(ctx, state, dataRepository, data); err != nil {
-			return err
+		state.Value += 1
+		for _, secret := range request.Secrets {
+			if secret.BigData {
+				if err = ds.applyFile(ctx, work, secret, request.Force); err != nil {
+					return err
+				}
+			} else {
+				if err = ds.apply(ctx, work, state, secret, request.Force); err != nil {
+					return err
+				}
+			}
 		}
-		if err = stateRepository.Save(ctx, state); err != nil {
+
+		if err = stateRepository.Update(ctx, state); err != nil {
 			return err
 		}
 		return nil
@@ -67,43 +109,70 @@ func (ds *DataService) PushUnary(ctx context.Context, data *domain.Data) error {
 	return nil
 }
 
-func (ds *DataService) PushMetadata(ctx context.Context, model *domain.Data) error {
+func (ds *DataService) applyFile(ctx context.Context, uow domain.UnitOfWork, secret *Secret, force bool) error {
 	logger := logging.Logger(ctx)
-	repository := ds.unitOfWork.DataRepository()
-	data, err := repository.Get(ctx, model.ID)
+	dataRepository := uow.DataRepository()
+	data, err := dataRepository.Get(ctx, secret.ID)
 	if err != nil && !errors.Is(err, persistence.ErrResourceNotFound) {
 		return err
 	}
-	if data == nil {
-		logger.Info("data does not exist")
-		model.Path = fmt.Sprintf("%s_%d", model.ID.String(), model.Version)
-		if err = repository.Insert(ctx, model); err != nil {
-			return err
+	if data != nil {
+		if secret.Version <= data.Version && !force {
+			logger.Warn("conflict! server win")
+			return ErrDataConflict
 		}
-		return nil
+		data.Deleted = secret.Deleted
+		return dataRepository.Update(ctx, data)
 	}
-
-	if err = ds.fileProvider.Remove(fmt.Sprintf("%s_%d", data.Path, data.Version)); err != nil {
-		return err
+	data = &domain.Data{
+		ID:         secret.ID,
+		ModifiedAt: secret.ModifiedAt,
+		UserID:     secret.UserID,
+		Type:       secret.Type,
+		BigData:    secret.BigData,
 	}
-
-	data.Update(
-		model.BigData,
-		model.DekNonce,
-		model.Dek,
-		model.PayloadNonce,
-		model.Payload,
-		model.FileDataNonce,
-		model.Deleted,
-		data.Version,
-	)
-	if err = repository.Update(ctx, data); err != nil {
-		return err
-	}
-	return nil
+	return dataRepository.Insert(ctx, data)
 }
 
-func (ds *DataService) PushData(ctx context.Context, id guid.Guid, payload []byte) error {
+func (ds *DataService) apply(ctx context.Context, uow domain.UnitOfWork, state *domain.SyncState, secret *Secret, force bool) error {
+
+	dataRepository := uow.DataRepository()
+	data, err := dataRepository.Get(ctx, secret.ID)
+	if err != nil && !errors.Is(err, persistence.ErrResourceNotFound) {
+		return err
+	}
+	if data != nil {
+		// no change
+		if data.Version == secret.Version && data.ModifiedAt.Equal(secret.ModifiedAt) {
+			return nil
+		}
+		logger := logging.Logger(ctx)
+		if secret.Version <= data.Version && !force {
+			logger.Warn("conflict! server win")
+			return ErrDataConflict
+		}
+		data.ModifiedAt = secret.ModifiedAt
+		data.Dek = secret.Dek
+		data.Payload = secret.Payload
+		data.Version = state.Value
+		data.Deleted = secret.Deleted
+		return dataRepository.Update(ctx, data)
+	}
+	data = &domain.Data{
+		ID:         secret.ID,
+		ModifiedAt: secret.ModifiedAt,
+		UserID:     secret.UserID,
+		Type:       secret.Type,
+		BigData:    secret.BigData,
+		Dek:        secret.Dek,
+		Payload:    secret.Payload,
+		Deleted:    secret.Deleted,
+		Version:    state.Value,
+	}
+	return dataRepository.Insert(ctx, data)
+}
+
+func (ds *DataService) HandleChunk(ctx context.Context, req *PushChunkRequest) error {
 	logger := logging.Logger(ctx)
 	logger.Info("pushing part data")
 	userId, err := auth.User(ctx)
@@ -111,39 +180,42 @@ func (ds *DataService) PushData(ctx context.Context, id guid.Guid, payload []byt
 		return err
 	}
 	repository := ds.unitOfWork.DataRepository()
-	data, err := repository.Get(ctx, id)
+	data, err := repository.Get(ctx, req.ID)
 	if err != nil {
 		return err
 	}
 	stateRepository := ds.unitOfWork.SyncStateRepository()
 	state, err := stateRepository.Get(ctx, syncTypeName, userId)
 	if err != nil {
-		if !errors.Is(err, pgx.ErrNoRows) {
-			return err
-		}
-		state = &domain.SyncState{
-			ID:     syncTypeName,
-			UserID: userId,
-			Value:  0,
-		}
+		return err
 	}
-	state.Value += 1
-	f, err := ds.fileProvider.OpenWrite(data.Path)
+	f, err := ds.fileProvider.OpenWrite(data.ID.String(), state.Value)
 	if err != nil {
 		return err
 	}
-	defer f.Close()
-	_, err = f.Write(payload)
+	defer func(f io.WriteCloser) {
+		err = f.Close()
+		if err != nil {
+			logger.Warn("failed to close file", zap.Error(err))
+		}
+	}(f)
+	_, err = f.Write(req.Buffer)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (ds *DataService) Finish(ctx context.Context, id guid.Guid) error {
+func (ds *DataService) Commit(ctx context.Context, req *PushFileCloseRequest) error {
 	if err := ds.unitOfWork.Tx(ctx, func(ctx context.Context, work domain.UnitOfWork) error {
 		logger := logging.Logger(ctx)
 		logger.Info("pushing final data")
+		dataRepository := work.DataRepository()
+		data, err := dataRepository.Get(ctx, req.ID)
+		if err != nil {
+			return err
+		}
+		oldVersion := data.Version
 		userId, err := auth.User(ctx)
 		if err != nil {
 			return err
@@ -151,69 +223,30 @@ func (ds *DataService) Finish(ctx context.Context, id guid.Guid) error {
 		stateRepository := work.SyncStateRepository()
 		state, err := stateRepository.Get(ctx, syncTypeName, userId)
 		if err != nil {
-			if !errors.Is(err, pgx.ErrNoRows) {
-				return err
-			}
-			state = &domain.SyncState{
-				ID:     syncTypeName,
-				UserID: userId,
-				Value:  0,
-			}
-		}
-		state.Value += 1
-		dataRepository := work.DataRepository()
-		data, err := dataRepository.Get(ctx, id)
-		if err != nil {
 			return err
 		}
+		data.Dek = req.Dek
+		data.Payload = req.Payload
 		data.Version = state.Value
+		data.ModifiedAt = req.ModifiedAt
 		if err = dataRepository.Update(ctx, data); err != nil {
 			return err
 		}
-		if err = stateRepository.Save(ctx, state); err != nil {
+		// удаляем старую версию
+		if err = ds.fileProvider.Remove(data.ID.String(), oldVersion); err != nil && !os.IsNotExist(err) {
 			return err
 		}
 		return nil
 	}); err != nil {
 		return err
 	}
+
 	return nil
 }
 
-func (ds *DataService) Push(ctx context.Context, dataList []*domain.Data) error {
-	//dataList = keepLast(dataList)
-	if err := ds.unitOfWork.Tx(ctx, func(ctx context.Context, work domain.UnitOfWork) error {
-		userId, err := auth.User(ctx)
-		if err != nil {
-			return err
-		}
-		stateRepository := work.SyncStateRepository()
-		state, err := stateRepository.Get(ctx, syncTypeName, userId)
-		if err != nil {
-			if !errors.Is(err, pgx.ErrNoRows) {
-				return err
-			}
-			state = &domain.SyncState{
-				ID:    syncTypeName,
-				Value: 0,
-			}
-		}
-		dataRepository := work.DataRepository()
-		for _, data := range dataList {
-			if err = ds.process(ctx, state, dataRepository, data); err != nil {
-				return err
-			}
-		}
-		if err = stateRepository.Save(ctx, state); err != nil {
-			return err
-		}
-		return nil
-	}); err != nil {
-		return err
-	}
-	return nil
+func (ds *DataService) OpenFile(id string, version int32) (io.ReadCloser, error) {
+	return ds.fileProvider.OpenRead(id, version)
 }
-
 func (ds *DataService) Poll(ctx context.Context, since int32) ([]*domain.Data, int32, error) {
 	user, err := auth.User(ctx)
 	if err != nil {
@@ -240,43 +273,4 @@ func (ds *DataService) Poll(ctx context.Context, since int32) ([]*domain.Data, i
 		}
 	}
 	return data, state.Value, nil
-}
-
-func (ds *DataService) process(ctx context.Context, state *domain.SyncState, repository domain.DataRepository, model *domain.Data) error {
-	logger := logging.Logger(ctx)
-	logger.Info("processing data")
-	data, err := repository.Get(ctx, model.ID)
-	if err != nil && !errors.Is(err, persistence.ErrResourceNotFound) {
-		return err
-	}
-	state.Value += 1
-	if data != nil {
-		logger.Info(fmt.Sprintf("updating data with id %d", data.ID))
-		if model.Version < data.Version {
-			logger.Warn("conflict! server win")
-			return nil
-		}
-		data.Update(
-			model.BigData,
-			model.DekNonce,
-			model.Dek,
-			model.PayloadNonce,
-			model.Payload,
-			model.FileDataNonce,
-			model.Deleted,
-			state.Value,
-		)
-		err = repository.Update(ctx, data)
-		if err != nil {
-			return err
-		}
-		return nil
-	}
-	logger.Info(fmt.Sprintf("creating data with id %s", model.ID.String()))
-	data = model
-	data.Version = state.Value
-	if err = repository.Insert(ctx, data); err != nil {
-		return err
-	}
-	return nil
 }

@@ -2,14 +2,15 @@
 
 package go;
 
+import "google/protobuf/timestamp.proto";
 import "google/protobuf/go_features.proto";
 option features.(pb.go).api_level = API_OPAQUE;
 
 option go_package = "/pb";
 
-message Data {
+message Secret {
   string id = 1;
-  string name = 2;
+  google.protobuf.Timestamp modified_at = 2;
   enum DataType {
     LoginPass = 0;
     Text = 1;
@@ -17,57 +18,53 @@ message Data {
     Other = 3;
   }
   DataType type  = 3;
-  bool large = 4;
-  bytes dek_nonce = 5;
-  bytes dek = 6;
-  bytes data_nonce = 7;
+  bool is_big = 4;
+  int32 version = 5;
+  bool deleted = 6;
+  bytes dek = 7;
   bytes data = 8;
-  bytes file_data_nonce = 9;
-  int32 version = 10;
-  bool deleted = 11;
-}
-
-enum RequestType{
-  Default = 0;
-  StartData = 1;
-  FilePart = 2;
-  EndData = 3;
-  ErrData = 4;
 }
 
 message PushRequest {
-  repeated Data data = 1;
+    repeated Secret secrets = 1;
+    bool force = 2;
 }
 
-message Push{
-  Data data = 1;
-  RequestType type = 2;
-  bytes chunk = 3;
+enum ChunkType {
+  FilePart = 0;
+  EndData = 1;
+  ErrData = 2;
+}
+
+message Chunk {
+  string id = 1;
+  ChunkType type = 2;
+  bytes buffer = 3;
+  int32 version = 4;
+  Secret secret = 5;
 }
 
 message PushResponse {
   bool success = 1;
 }
 
-message PollRequest {
-  int32 since = 1;
+message PullRequest {
+  int32 since = 2;
 }
 
-message PollResponse {
-  int32 server_version = 1;
-  repeated Data data = 2;
+message PullResponse {
+  repeated Secret secrets = 1;
+  int32 version = 2;
 }
 
-message Poll {
-  int32 server_version = 1;
-  RequestType type = 2;
-  Data data = 3;
-  bytes chunk = 4;
+message PullStreamRequest {
+  string id = 1;
+  int32 version = 2;
 }
 
 service SyncData {
-  rpc PushUnary(PushRequest) returns(PushResponse);
-  rpc PushStream(stream Push) returns(PushResponse);
-  rpc PollUnary(PollRequest) returns(PollResponse);
-  rpc PollStream(PollRequest) returns(stream Poll);
+  rpc Push(PushRequest) returns(PushResponse);
+  rpc Pull(PullRequest) returns(PullResponse);
+  rpc PushStream(stream Chunk) returns(PushResponse);
+  rpc PullStream(PullStreamRequest) returns(stream Chunk);
 }

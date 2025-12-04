@@ -72,6 +72,9 @@ func (us *UserService) Register(ctx context.Context, login, password string) (st
 		state.ID = syncTypeName
 		state.UserID = user.ID
 		state.Value = 0
+		if err = work.SyncStateRepository().Insert(ctx, &state); err != nil {
+			return err
+		}
 		return nil
 	}); err != nil {
 		return "", err

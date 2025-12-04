@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 )
 
 type FileMode uint32
@@ -14,34 +15,42 @@ const (
 )
 
 type FileProvider struct {
-	path string
+	Path string
 }
 
 func NewFileProvider(path string) *FileProvider {
-	return &FileProvider{path: path}
+	return &FileProvider{Path: path}
 }
 
-func (fp *FileProvider) IsExist(path string) (bool, error) {
-	stat, err := os.Stat(path)
-	if err != nil {
-		return false, err
-	}
-	if stat.Mode().IsDir() {
-		return false, nil
-	}
-	return true, nil
+func (fp *FileProvider) IsExist(fileName string, version int32) error {
+	_, err := os.Stat(buildPath(fp.Path, fileName, version))
+	return err
 }
 
-func (fp *FileProvider) OpenRead(fileName string) (io.ReadCloser, error) {
-	fullPath := fmt.Sprintf("%s\\%s", fp.path, fileName)
+func (fp *FileProvider) OpenRead(fileName string, version int32, dst ...string) (io.ReadCloser, error) {
+	fullPath := buildPath(fp.Path, fileName, version, dst...)
 	return os.OpenFile(fullPath, os.O_RDONLY, 0644)
 }
 
-func (fp *FileProvider) OpenWrite(fileName string) (io.WriteCloser, error) {
-	fullPath := fmt.Sprintf("%s\\%s", fp.path, fileName)
+func (fp *FileProvider) OpenWrite(fileName string, version int32, dst ...string) (io.WriteCloser, error) {
+	fullPath := buildPath(fp.Path, fileName, version, dst...)
 	return os.OpenFile(fullPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 }
 
-func (fp *FileProvider) Remove(fileName string) error {
-	return os.Remove(fmt.Sprintf("%s\\%s", fp.path, fileName))
+func (fp *FileProvider) Remove(fileName string, version int32, dst ...string) error {
+	return os.Remove(buildPath(fp.Path, fileName, version, dst...))
+}
+
+func buildPath(root, name string, version int32, dst ...string) string {
+	if dst == nil {
+		return fmt.Sprintf("%s\\%s_%d", root, name, version)
+	}
+	var sb strings.Builder
+	for _, d := range dst {
+		if sb.Len() != 0 {
+			sb.WriteString("_")
+		}
+		sb.WriteString(d)
+	}
+	return fmt.Sprintf("%s\\%s_%d_%s", root, name, version, sb.String())
 }

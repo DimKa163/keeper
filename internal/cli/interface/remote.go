@@ -1,25 +1,27 @@
-package cli
+package _interface
 
 import (
 	"database/sql"
+	"github.com/DimKa163/keeper/internal/cli/app"
+	"github.com/DimKa163/keeper/internal/cli/common"
 	"github.com/DimKa163/keeper/internal/cli/persistence"
 	"github.com/spf13/cobra"
 )
 
 type RegisterRemoteServerCommandBuilder struct {
-	users  *UserService
-	db     *sql.DB
-	key    string
-	addr   string
-	login  string
-	pass   string
-	active bool
+	userService *app.UserService
+	db          *sql.DB
+	key         string
+	addr        string
+	login       string
+	pass        string
+	active      bool
 }
 
-func NewRegisterRemoteServerCommandBuilder(user *UserService, db *sql.DB) *RegisterRemoteServerCommandBuilder {
+func NewRegisterRemoteServerCommandBuilder(userService *app.UserService, db *sql.DB) *RegisterRemoteServerCommandBuilder {
 	return &RegisterRemoteServerCommandBuilder{
-		users: user,
-		db:    db,
+		userService: userService,
+		db:          db,
 	}
 }
 
@@ -29,15 +31,15 @@ func (c *RegisterRemoteServerCommandBuilder) Build() (*cobra.Command, error) {
 		Short: "register remote server",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
-			masterKey, err := c.users.Auth(ctx, c.key)
+			masterKey, err := c.userService.Auth(ctx, c.key)
 			if err != nil {
 				return err
 			}
-			ctx = SetMasterKey(ctx, masterKey)
+			ctx = common.SetMasterKey(ctx, masterKey)
 			if err = persistence.InsertServer(ctx, c.db, c.addr, c.login, c.pass, c.active); err != nil {
 				return err
 			}
-			client, err := NewRemoteClient(c.addr, c.login, c.pass)
+			client, err := app.NewRemoteClient(c.addr, c.login, c.pass)
 			if err != nil {
 				return err
 			}

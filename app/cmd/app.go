@@ -5,9 +5,11 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/DimKa163/keeper/internal/cli"
+	"github.com/DimKa163/keeper/internal/cli/app"
+	"github.com/DimKa163/keeper/internal/cli/common"
 	"github.com/DimKa163/keeper/internal/cli/core"
 	"github.com/DimKa163/keeper/internal/cli/crypto"
+	"github.com/DimKa163/keeper/internal/cli/interface"
 	"github.com/DimKa163/keeper/internal/cli/persistence"
 	"github.com/DimKa163/keeper/internal/shared"
 	"github.com/spf13/cobra"
@@ -17,8 +19,17 @@ import (
 	"time"
 )
 
+type ServiceContainer struct {
+	DB          *sql.DB
+	UserService *app.UserService
+	SyncService *app.SyncService
+	DataService *app.DataManager
+	Decoder     core.Decoder
+	Encoder     core.Encoder
+}
+
 type CMD struct {
-	*cli.ServiceContainer
+	*ServiceContainer
 	root *cobra.Command
 }
 
@@ -36,7 +47,7 @@ func New() (*CMD, error) {
 	}
 	fileProvider := shared.NewFileProvider(fmt.Sprintf("%s\\", dir))
 	syncService, err := createSyncService(db, fileProvider)
-	if err != nil && errors.Is(cli.ErrServerUnavailable, err) {
+	if err != nil && errors.Is(app.ErrServerUnavailable, err) {
 		fmt.Println("remote server unavailable")
 		err = nil
 	}
@@ -45,11 +56,11 @@ func New() (*CMD, error) {
 	}
 	encoder := crypto.NewGzipEncoder(crypto.NewAesEncoder())
 	decoder := crypto.NewGzipDecoder(crypto.NewAesDecoder())
-	app := &CMD{
-		ServiceContainer: &cli.ServiceContainer{
+	cmd := &CMD{
+		ServiceContainer: &ServiceContainer{
 			DB:          db,
-			UserService: cli.NewUserService(db),
-			DataService: cli.NewDataService(db, encoder, decoder, fileProvider),
+			UserService: app.NewUserService(db),
+			DataService: app.NewDataService(db, encoder, decoder, syncService, fileProvider),
 			SyncService: syncService,
 			Encoder:     encoder,
 			Decoder:     decoder,
@@ -58,54 +69,56 @@ func New() (*CMD, error) {
 
 	rootCmd := &cobra.Command{
 		Use:  "keeper",
-		RunE: app.Run,
+		RunE: cmd.Run,
 	}
-	app.root = rootCmd
-	return app, nil
+	cmd.root = rootCmd
+	return cmd, nil
 }
 
 func (cmd *CMD) RegisterCommands() error {
-	if err := cmd.addCommand(cli.NewRegisterBuilder(cmd.UserService)); err != nil {
+	if err := cmd.addCommand(_interface.NewRegisterBuilder(cmd.UserService)); err != nil {
 		return err
 	}
-	if err := cmd.addCommand(cli.NewDataListBuilder(cmd.UserService, cmd.DataService, cmd.Decoder)); err != nil {
+	if err := cmd.addCommand(_interface.NewDataListBuilder(cmd.UserService, cmd.DataService, cmd.Decoder)); err != nil {
 		return err
 	}
-	if err := cmd.addCommand(cli.NewCreateLoginPassBuilder(cmd.UserService, cmd.DataService, cmd.SyncService)); err != nil {
+	if err := cmd.addCommand(_interface.NewCreateLoginPassBuilder(cmd.UserService, cmd.DataService)); err != nil {
 		return err
 	}
-	if err := cmd.addCommand(cli.NewUpdateLoginPassCommandBuilder(cmd.UserService, cmd.DataService, cmd.SyncService)); err != nil {
+	if err := cmd.addCommand(_interface.NewUpdateLoginPassCommandBuilder(cmd.UserService, cmd.DataService)); err != nil {
 		return err
 	}
-	if err := cmd.addCommand(cli.NewCreateTextContentBuilder(cmd.UserService, cmd.DataService, cmd.SyncService)); err != nil {
+	if err := cmd.addCommand(_interface.NewCreateTextContentBuilder(cmd.UserService, cmd.DataService)); err != nil {
 		return err
 	}
-	if err := cmd.addCommand(cli.NewUpdateTextContentCommandBuilder(cmd.UserService, cmd.DataService, cmd.SyncService)); err != nil {
+	if err := cmd.addCommand(_interface.NewUpdateTextContentCommandBuilder(cmd.UserService, cmd.DataService)); err != nil {
 		return err
 	}
-	if err := cmd.addCommand(cli.NewCreateBinaryFileCommandBuilder(cmd.UserService, cmd.DataService, cmd.SyncService)); err != nil {
+	if err := cmd.addCommand(_interface.NewCreateBinaryFileCommandBuilder(cmd.UserService, cmd.DataService)); err != nil {
 		return err
 	}
-	if err := cmd.addCommand(cli.NewUpdateBinaryFileCommandBuilder(cmd.UserService, cmd.DataService, cmd.SyncService)); err != nil {
+	if err := cmd.addCommand(_interface.NewUpdateBinaryFileCommandBuilder(cmd.UserService, cmd.DataService)); err != nil {
 		return err
 	}
-	if err := cmd.addCommand(cli.NewCreateBankCardCommandBuilder(cmd.UserService, cmd.DataService, cmd.SyncService)); err != nil {
+	if err := cmd.addCommand(_interface.NewCreateBankCardCommandBuilder(cmd.UserService, cmd.DataService)); err != nil {
 		return err
 	}
-	if err := cmd.addCommand(cli.NewUpdateBankCardCommandBuilder(cmd.UserService, cmd.DataService, cmd.SyncService)); err != nil {
+	if err := cmd.addCommand(_interface.NewUpdateBankCardCommandBuilder(cmd.UserService, cmd.DataService)); err != nil {
 		return err
 	}
-	if err := cmd.addCommand(cli.NewDeleteRecordCommandBuilder(cmd.UserService, cmd.DataService, cmd.SyncService)); err != nil {
+	if err := cmd.addCommand(_interface.NewDeleteRecordCommandBuilder(cmd.UserService, cmd.DataService)); err != nil {
 		return err
 	}
-	if err := cmd.addCommand(cli.NewRegisterRemoteServerCommandBuilder(cmd.UserService, cmd.DB)); err != nil {
+	if err := cmd.addCommand(_interface.NewRegisterRemoteServerCommandBuilder(cmd.UserService, cmd.DB)); err != nil {
 		return err
 	}
-	if err := cmd.addCommand(cli.NewSyncCommandBuilder(cmd.UserService, cmd.SyncService)); err != nil {
+	if err := cmd.addCommand(_interface.NewSyncCommandBuilder(cmd.UserService, cmd.SyncService)); err != nil {
 		return err
 	}
-	if err := cmd.addCommand(cli.NewReadBinaryFileCommandBuilder(cmd.UserService, cmd.DataService)); err != nil {
+	if err := cmd.addCommand(_interface.NewReadBinaryFileCommandBuilder(cmd.UserService, cmd.DataService)); err != nil {
 		return err
+	}
+	if err := cmd.addCommand(_interface.NewResolveCommandBuilder(cmd.DataService, cmd.UserService, cmd.SyncService)); err != nil {
 	}
 	return nil
 }
@@ -125,7 +138,7 @@ func (cmd *CMD) Run(command *cobra.Command, args []string) error {
 }
 
 func (cmd *CMD) Execute() error {
-	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 180*time.Second)
 	defer cancel()
 	hostname, err := os.Hostname()
 	if err != nil {
@@ -136,18 +149,18 @@ func (cmd *CMD) Execute() error {
 		return err
 	}
 	if us != nil {
-		ctx = cli.SetMasterKey(cli.SetHostName(ctx, us.Username), us.Password)
+		ctx = common.SetMasterKey(common.SetHostName(ctx, us.Username), us.Password)
 	}
 	name := reflect.TypeOf(core.Record{}).Name()
 	version, err := persistence.GetState(ctx, cmd.DB, name)
 	if err != nil {
 		return err
 	}
-	ctx = cli.SetVersion(ctx, version.Value)
+	ctx = common.SetVersion(ctx, version.Value)
 	return cmd.root.ExecuteContext(ctx)
 }
 
-func createSyncService(db *sql.DB, fp *shared.FileProvider) (*cli.SyncService, error) {
+func createSyncService(db *sql.DB, fp *shared.FileProvider) (*app.SyncService, error) {
 	serv, err := persistence.GetServer(context.Background(), db, true)
 	if err != nil {
 		if !errors.Is(err, sql.ErrNoRows) {
@@ -155,14 +168,14 @@ func createSyncService(db *sql.DB, fp *shared.FileProvider) (*cli.SyncService, e
 		}
 		return nil, nil
 	}
-	client, err := cli.NewRemoteClient(serv.Address, serv.Login, serv.Password)
+	client, err := app.NewRemoteClient(serv.Address, serv.Login, serv.Password)
 	if err != nil {
 		return nil, err
 	}
 	if err = client.IsHealthy(context.Background()); err != nil {
 		return nil, err
 	}
-	return cli.NewSyncService(client, db, fp), nil
+	return app.NewSyncService(client, db, fp), nil
 }
 
 func createDirIfNotExist() (string, string, error) {

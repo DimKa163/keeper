@@ -9,7 +9,8 @@ import (
 
 const (
 	getStateQUERY    = `SELECT id, user_id, value FROM sync_state WHERE id = $1 AND user_id = $2;`
-	upsertStateQUERY = `UPDATE sync_state SET value = $2 WHERE id = $1 and user_id = $3;`
+	insertStateQuery = `INSERT INTO sync_state VALUES ($1, $2, $3);`
+	updateStateQUERY = `UPDATE sync_state SET value = $1 WHERE id = $2 and user_id = $3;`
 )
 
 type SyncStateRepository struct {
@@ -28,8 +29,15 @@ func (sr *SyncStateRepository) Get(ctx context.Context, id string, userID guid.G
 	return &syncState, nil
 }
 
-func (sr *SyncStateRepository) Save(ctx context.Context, syncState *domain.SyncState) error {
-	if _, err := sr.db.Exec(ctx, upsertStateQUERY, syncState.ID, syncState.Value, syncState.UserID); err != nil {
+func (sr *SyncStateRepository) Insert(ctx context.Context, syncState *domain.SyncState) error {
+	if _, err := sr.db.Exec(ctx, insertStateQuery, syncState.ID, syncState.UserID, syncState.Value); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (sr *SyncStateRepository) Update(ctx context.Context, syncState *domain.SyncState) error {
+	if _, err := sr.db.Exec(ctx, updateStateQUERY, syncState.Value, syncState.ID, syncState.UserID); err != nil {
 		return err
 	}
 	return nil

@@ -1,56 +1,58 @@
-package cli
+package _interface
 
 import (
 	"fmt"
+	"github.com/DimKa163/keeper/internal/cli/app"
+	"github.com/DimKa163/keeper/internal/cli/common"
 	"github.com/DimKa163/keeper/internal/cli/core"
 	"github.com/spf13/cobra"
 	"os"
 )
 
 type CreateBinaryFileCommandBuilder struct {
-	users    *UserService
-	data     *DataService
-	sync     *SyncService
-	key      string
-	path     string
-	needSync bool
+	userService *app.UserService
+	dataManager *app.DataManager
+	key         string
+	path        string
+	needSync    bool
 }
 
-func NewCreateBinaryFileCommandBuilder(users *UserService, data *DataService, sync *SyncService) *CreateBinaryFileCommandBuilder {
+func NewCreateBinaryFileCommandBuilder(
+	users *app.UserService,
+	dataManager *app.DataManager,
+) *CreateBinaryFileCommandBuilder {
 	return &CreateBinaryFileCommandBuilder{
-		users: users,
-		data:  data,
-		sync:  sync,
+		userService: users,
+		dataManager: dataManager,
 	}
 }
 
-func (cbf *CreateBinaryFileCommandBuilder) Build() (*cobra.Command, error) {
+func (c *CreateBinaryFileCommandBuilder) Build() (*cobra.Command, error) {
 	cmd := &cobra.Command{
 		Use:   "create-binary-file",
 		Short: "Create a binary file for a user",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
-			masterKey, err := cbf.users.Auth(ctx, cbf.key)
+			masterKey, err := c.userService.Auth(ctx, c.key)
 			if err != nil {
 				return err
 			}
-			ctx = SetMasterKey(ctx, masterKey)
-			id, err := cbf.data.CreateRecord(ctx, &RecordRequest{Type: core.OtherType, Path: cbf.path})
+			ctx = common.SetMasterKey(ctx, masterKey)
+			id, err := c.dataManager.Create(
+				ctx,
+				&app.RecordRequest{Type: core.OtherType, Path: c.path},
+				c.needSync,
+			)
 			if err != nil {
 				return err
 			}
 			fmt.Printf("created binary: %s\n", id)
-			if cbf.needSync && cbf.sync != nil {
-				if err = cbf.sync.Sync(ctx); err != nil {
-					return err
-				}
-			}
 			return nil
 		},
 	}
-	cmd.Flags().StringVarP(&cbf.key, "key", "k", "", "key")
-	cmd.Flags().StringVarP(&cbf.path, "path", "p", "", "path for file")
-	cmd.Flags().BoolVarP(&cbf.needSync, "sync", "s", true, "sync")
+	cmd.Flags().StringVarP(&c.key, "key", "k", "", "key")
+	cmd.Flags().StringVarP(&c.path, "path", "p", "", "path for file")
+	cmd.Flags().BoolVarP(&c.needSync, "syncService", "s", true, "syncService")
 	err := cobra.MarkFlagRequired(cmd.Flags(), "key")
 	if err != nil {
 		return nil, err
@@ -63,51 +65,52 @@ func (cbf *CreateBinaryFileCommandBuilder) Build() (*cobra.Command, error) {
 }
 
 type UpdateBinaryFileCommandBuilder struct {
-	users    *UserService
-	data     *DataService
-	sync     *SyncService
+	users    *app.UserService
+	data     *app.DataManager
 	id       string
 	key      string
 	path     string
 	needSync bool
 }
 
-func NewUpdateBinaryFileCommandBuilder(users *UserService, data *DataService, sync *SyncService) *UpdateBinaryFileCommandBuilder {
+func NewUpdateBinaryFileCommandBuilder(
+	users *app.UserService,
+	dataManager *app.DataManager,
+) *UpdateBinaryFileCommandBuilder {
 	return &UpdateBinaryFileCommandBuilder{
 		users: users,
-		data:  data,
-		sync:  sync,
+		data:  dataManager,
 	}
 }
 
-func (cbf *UpdateBinaryFileCommandBuilder) Build() (*cobra.Command, error) {
+func (c *UpdateBinaryFileCommandBuilder) Build() (*cobra.Command, error) {
 	cmd := &cobra.Command{
 		Use:   "update-binary-file",
 		Short: "update a binary file for a user",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
-			masterKey, err := cbf.users.Auth(ctx, cbf.key)
+			masterKey, err := c.users.Auth(ctx, c.key)
 			if err != nil {
 				return err
 			}
-			ctx = SetMasterKey(ctx, masterKey)
-			id, err := cbf.data.UpdateRecord(ctx, cbf.id, &RecordRequest{Type: core.OtherType, Path: cbf.path})
+			ctx = common.SetMasterKey(ctx, masterKey)
+			id, err := c.data.Update(
+				ctx,
+				c.id,
+				&app.RecordRequest{Type: core.OtherType, Path: c.path},
+				c.needSync,
+			)
 			if err != nil {
 				return err
 			}
 			fmt.Printf("updated binary: %s\n", id)
-			if cbf.needSync && cbf.sync != nil {
-				if err = cbf.sync.Sync(ctx); err != nil {
-					return err
-				}
-			}
 			return nil
 		},
 	}
-	cmd.Flags().StringVarP(&cbf.id, "id", "i", "", "identifier")
-	cmd.Flags().StringVarP(&cbf.key, "key", "k", "", "key")
-	cmd.Flags().StringVarP(&cbf.path, "path", "p", "", "path for file")
-	cmd.Flags().BoolVarP(&cbf.needSync, "sync", "s", true, "sync")
+	cmd.Flags().StringVarP(&c.id, "id", "i", "", "identifier")
+	cmd.Flags().StringVarP(&c.key, "key", "k", "", "key")
+	cmd.Flags().StringVarP(&c.path, "path", "p", "", "path for file")
+	cmd.Flags().BoolVarP(&c.needSync, "syncService", "s", true, "syncService")
 	if err := cobra.MarkFlagRequired(cmd.Flags(), "id"); err != nil {
 		return nil, err
 	}
@@ -121,42 +124,42 @@ func (cbf *UpdateBinaryFileCommandBuilder) Build() (*cobra.Command, error) {
 }
 
 type ReadBinaryFileCommandBuilder struct {
-	users *UserService
-	data  *DataService
-	id    string
-	key   string
-	path  string
+	userService *app.UserService
+	dataManager *app.DataManager
+	id          string
+	key         string
+	path        string
 }
 
-func NewReadBinaryFileCommandBuilder(users *UserService, data *DataService) *ReadBinaryFileCommandBuilder {
+func NewReadBinaryFileCommandBuilder(users *app.UserService, data *app.DataManager) *ReadBinaryFileCommandBuilder {
 	return &ReadBinaryFileCommandBuilder{
-		users: users,
-		data:  data,
+		userService: users,
+		dataManager: data,
 	}
 }
 
-func (cbf *ReadBinaryFileCommandBuilder) Build() (*cobra.Command, error) {
+func (c *ReadBinaryFileCommandBuilder) Build() (*cobra.Command, error) {
 	cmd := &cobra.Command{
 		Use:   "read-binary-file",
 		Short: "read a binary file for a user",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
-			masterKey, err := cbf.users.Auth(ctx, cbf.key)
+			masterKey, err := c.userService.Auth(ctx, c.key)
 			if err != nil {
 				return err
 			}
-			ctx = SetMasterKey(ctx, masterKey)
-			record, err := cbf.data.Get(ctx, cbf.id)
+			ctx = common.SetMasterKey(ctx, masterKey)
+			record, err := c.dataManager.Get(ctx, c.id)
 			if err != nil {
 				return err
 			}
 			if record.BigData {
-				d, f, err := cbf.data.ExtractFile(ctx, record)
+				d, f, err := c.dataManager.ExtractFile(ctx, record)
 				if err != nil {
 					return err
 				}
 				defer f.Close()
-				file, err := os.Create(fmt.Sprintf("%s\\%s", cbf.path, d.Name))
+				file, err := os.Create(fmt.Sprintf("%s\\%s", c.path, d.Name))
 				if err != nil {
 					return err
 				}
@@ -175,9 +178,9 @@ func (cbf *ReadBinaryFileCommandBuilder) Build() (*cobra.Command, error) {
 		},
 	}
 
-	cmd.Flags().StringVarP(&cbf.id, "id", "i", "", "identifier")
-	cmd.Flags().StringVarP(&cbf.key, "key", "k", "", "key")
-	cmd.Flags().StringVarP(&cbf.path, "path", "p", "", "path for file")
+	cmd.Flags().StringVarP(&c.id, "id", "i", "", "identifier")
+	cmd.Flags().StringVarP(&c.key, "key", "k", "", "key")
+	cmd.Flags().StringVarP(&c.path, "path", "p", "", "path for file")
 	if err := cobra.MarkFlagRequired(cmd.Flags(), "id"); err != nil {
 		return nil, err
 	}

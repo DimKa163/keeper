@@ -1,45 +1,47 @@
-package cli
+package _interface
 
 import (
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/DimKa163/keeper/internal/cli/app"
+	"github.com/DimKa163/keeper/internal/cli/common"
 	"github.com/DimKa163/keeper/internal/cli/core"
 	"github.com/spf13/cobra"
 )
 
 type DataListBuilder struct {
-	users   *UserService
-	data    *DataService
-	decoder core.Decoder
-	key     string
-	limit   int32
-	offset  int32
+	userService *app.UserService
+	dataManager *app.DataManager
+	decoder     core.Decoder
+	key         string
+	limit       int32
+	offset      int32
 }
 
-func NewDataListBuilder(users *UserService, data *DataService, decoder core.Decoder) *DataListBuilder {
-	return &DataListBuilder{users: users, data: data, decoder: decoder}
+func NewDataListBuilder(userService *app.UserService, dataManager *app.DataManager, decoder core.Decoder) *DataListBuilder {
+	return &DataListBuilder{userService: userService, dataManager: dataManager, decoder: decoder}
 }
 
-func (dlb *DataListBuilder) Build() (*cobra.Command, error) {
+func (c *DataListBuilder) Build() (*cobra.Command, error) {
 	cmd := &cobra.Command{
 		Use:   "list",
-		Short: "list all data",
+		Short: "list all dataManager",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
-			masterKey, err := dlb.users.Auth(ctx, dlb.key)
+			masterKey, err := c.userService.Auth(ctx, c.key)
 			if err != nil {
 				return err
 			}
-			ctx = SetMasterKey(ctx, masterKey)
-			records, err := dlb.data.GetAll(ctx, dlb.limit, dlb.offset)
+			ctx = common.SetMasterKey(ctx, masterKey)
+			records, err := c.dataManager.GetAll(ctx, c.limit, c.offset)
 			if err != nil {
 				return err
 			}
 			var js string
 			for _, record := range records {
-				js, err = dlb.mapRecord(ctx, record)
+				js, err = c.mapRecord(ctx, record)
 				if err != nil {
 					return err
 				}
@@ -48,9 +50,9 @@ func (dlb *DataListBuilder) Build() (*cobra.Command, error) {
 			return nil
 		},
 	}
-	cmd.Flags().StringVarP(&dlb.key, "key", "k", "", "key")
-	cmd.Flags().Int32VarP(&dlb.limit, "limit", "l", 5, "limit")
-	cmd.Flags().Int32VarP(&dlb.offset, "offset", "o", 0, "offset")
+	cmd.Flags().StringVarP(&c.key, "key", "k", "", "key")
+	cmd.Flags().Int32VarP(&c.limit, "limit", "l", 5, "limit")
+	cmd.Flags().Int32VarP(&c.offset, "offset", "o", 0, "offset")
 	err := cobra.MarkFlagRequired(cmd.Flags(), "key")
 	if err != nil {
 		return nil, err
@@ -59,32 +61,32 @@ func (dlb *DataListBuilder) Build() (*cobra.Command, error) {
 	return cmd, nil
 }
 
-func (dlb *DataListBuilder) mapRecord(ctx context.Context, record *core.Record) (string, error) {
-	masterKey, err := GetMasterKey(ctx)
+func (c *DataListBuilder) mapRecord(ctx context.Context, record *core.Record) (string, error) {
+	masterKey, err := common.GetMasterKey(ctx)
 	if err != nil {
 		return "", err
 	}
 	switch record.Type {
 	case core.LoginPassType:
-		data, err := record.DecodeLoginPass(dlb.decoder, masterKey)
+		data, err := record.DecodeLoginPass(c.decoder, masterKey)
 		if err != nil {
 			return "", err
 		}
 		return mapLoginPass(record.ID, data)
 	case core.TextType:
-		data, err := record.DecodeText(dlb.decoder, masterKey)
+		data, err := record.DecodeText(c.decoder, masterKey)
 		if err != nil {
 			return "", err
 		}
 		return mapText(record.ID, data)
 	case core.BankCardType:
-		data, err := record.DecodeBankCard(dlb.decoder, masterKey)
+		data, err := record.DecodeBankCard(c.decoder, masterKey)
 		if err != nil {
 			return "", err
 		}
 		return mapBakCard(record.ID, data)
 	case core.OtherType:
-		data, err := record.DecodeBinary(dlb.decoder, masterKey)
+		data, err := record.DecodeBinary(c.decoder, masterKey)
 		if err != nil {
 			return "", err
 		}

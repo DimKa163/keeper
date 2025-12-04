@@ -18,11 +18,8 @@ const (
     				user_id, 
     				big_data, 
     				data_type, 
-    				payload, 
-    				payload_nonce, 
-    				dek, 
-    				dek_nonce,
-    				file_data_nonce,
+    				payload,
+    				dek,
     				path,
     				version,
     				deleted
@@ -35,11 +32,8 @@ const (
     				user_id, 
     				big_data, 
     				data_type, 
-    				payload, 
-    				payload_nonce, 
+    				payload,
     				dek, 
-    				dek_nonce,
-    				file_data_nonce,
     				path,
     				version,
     				deleted
@@ -48,30 +42,25 @@ const (
 					ORDER BY modified_at ASC`
 	insertStoredDataQUERY = `INSERT INTO data (
 				 	id,
+                  	modified_at,
     				user_id, 
     				big_data, 
     				data_type, 
     				payload, 
-    				payload_nonce, 
     				dek, 
-    				dek_nonce,
-                  	file_data_nonce,
                   	path,
     				version,
                   	deleted)
-    				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`
+    				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`
 	updateStoredDataQUERY = `UPDATE data 
 							SET
 							user_id = $2,
 							big_data = $3,
 							data_type = $4,
 							payload = $5,
-							payload_nonce = $6,
-							dek = $7,
-							dek_nonce = $8,
-							file_data_nonce = $9,
-							version = $10,
-							modified_at = $11
+							dek = $6,
+							version = $7,
+							modified_at = $8
 							WHERE id = $1`
 	deleteStoredDataQUERY = `UPDATE data SET deleted = $2, version=$3 WHERE id = $1`
 )
@@ -93,10 +82,7 @@ func (sdr *DataRepository) Get(ctx context.Context, dataID guid.Guid) (*domain.D
 	var typeStr string
 	var bigData bool
 	var payload []byte
-	var payloadNonce []byte
 	var dek []byte
-	var dekNonce []byte
-	var fileDataNonce []byte
 	var path string
 	var version int32
 	var deleted bool
@@ -108,10 +94,7 @@ func (sdr *DataRepository) Get(ctx context.Context, dataID guid.Guid) (*domain.D
 			&bigData,
 			&typeStr,
 			&payload,
-			&payloadNonce,
 			&dek,
-			&dekNonce,
-			&fileDataNonce,
 			&path,
 			&version,
 			&deleted); err != nil {
@@ -140,10 +123,7 @@ func (sdr *DataRepository) Get(ctx context.Context, dataID guid.Guid) (*domain.D
 	}
 	storedData.BigData = bigData
 	storedData.Payload = payload
-	storedData.PayloadNonce = payloadNonce
 	storedData.Dek = dek
-	storedData.DekNonce = dekNonce
-	storedData.FileDataNonce = fileDataNonce
 	storedData.Path = path
 	storedData.Version = version
 	storedData.Deleted = deleted
@@ -166,10 +146,7 @@ func (sdr *DataRepository) GetAll(ctx context.Context, userID guid.Guid, greater
 		var typeStr string
 		var bigData bool
 		var payload []byte
-		var payloadNonce []byte
 		var dek []byte
-		var dekNonce []byte
-		var fileDataNonce []byte
 		var path string
 		var version int32
 		var deleted bool
@@ -180,10 +157,7 @@ func (sdr *DataRepository) GetAll(ctx context.Context, userID guid.Guid, greater
 			&bigData,
 			&typeStr,
 			&payload,
-			&payloadNonce,
 			&dek,
-			&dekNonce,
-			&fileDataNonce,
 			&path,
 			&version,
 			&deleted); err != nil {
@@ -210,10 +184,7 @@ func (sdr *DataRepository) GetAll(ctx context.Context, userID guid.Guid, greater
 		}
 		data.BigData = bigData
 		data.Payload = payload
-		data.PayloadNonce = payloadNonce
 		data.Dek = dek
-		data.DekNonce = dekNonce
-		data.FileDataNonce = fileDataNonce
 		data.Path = path
 		data.Version = version
 		data.Deleted = deleted
@@ -226,14 +197,12 @@ func (sdr *DataRepository) Insert(ctx context.Context, data *domain.Data) error 
 		ctx,
 		insertStoredDataQUERY,
 		data.ID,
+		data.ModifiedAt,
 		data.UserID,
 		data.BigData,
 		data.Type,
 		data.Payload,
-		data.PayloadNonce,
 		data.Dek,
-		data.DekNonce,
-		data.FileDataNonce,
 		data.Path,
 		data.Version,
 		data.Deleted,
@@ -252,10 +221,7 @@ func (sdr *DataRepository) Update(ctx context.Context, data *domain.Data) error 
 		data.BigData,
 		data.Type,
 		data.Payload,
-		data.PayloadNonce,
 		data.Dek,
-		data.DekNonce,
-		data.FileDataNonce,
 		data.Version,
 		data.ModifiedAt,
 	); err != nil {

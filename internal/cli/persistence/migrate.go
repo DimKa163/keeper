@@ -20,15 +20,11 @@ func Migrate(db *sql.DB, path string) error {
 			    modified_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			    type        INTEGER NOT NULL,
 			    big_data  	BOOLEAN NOT NULL DEFAULT 0,
-			    data        BLOB NOT NULL,
-			    data_nonce  BLOB NOT NULL,
-			    dek         BLOB NOT NULL,
-			    dek_nonce   BLOB NOT NULL,
-			    file_path   TEXT NOT NULL DEFAULT '',
-			    file_nonce  BLOB,
+			    data        BLOB NULL,
+			    dek         BLOB NULL,
 			    deleted     BOOLEAN NOT NULL DEFAULT 0,
 			    version     INT NOT NULL,
-			    corrupted 	BOOLEAN NOT NULL DEFAULT 0,
+			    corrupted 	BOOLEAN NOT NULL DEFAULT 0
 			);
 			
 			CREATE TABLE IF NOT EXISTS conflicts(

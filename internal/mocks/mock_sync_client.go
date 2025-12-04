@@ -43,7 +43,7 @@ func (m *MockSyncDataClient) Poll(ctx context.Context, in *pb.PollRequest, opts 
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "Poll", varargs...)
+	ret := m.ctrl.Call(m, "pull", varargs...)
 	ret0, _ := ret[0].(*pb.PollResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
@@ -53,7 +53,7 @@ func (m *MockSyncDataClient) Poll(ctx context.Context, in *pb.PollRequest, opts 
 func (mr *MockSyncDataClientMockRecorder) Poll(ctx, in interface{}, opts ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, in}, opts...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Poll", reflect.TypeOf((*MockSyncDataClient)(nil).Poll), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "pull", reflect.TypeOf((*MockSyncDataClient)(nil).Poll), varargs...)
 }
 
 // Push mocks base method.
@@ -102,7 +102,7 @@ func (m *MockSyncDataServer) EXPECT() *MockSyncDataServerMockRecorder {
 // Poll mocks base method.
 func (m *MockSyncDataServer) Poll(arg0 context.Context, arg1 *pb.PollRequest) (*pb.PollResponse, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Poll", arg0, arg1)
+	ret := m.ctrl.Call(m, "pull", arg0, arg1)
 	ret0, _ := ret[0].(*pb.PollResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
@@ -111,7 +111,7 @@ func (m *MockSyncDataServer) Poll(arg0 context.Context, arg1 *pb.PollRequest) (*
 // Poll indicates an expected call of Poll.
 func (mr *MockSyncDataServerMockRecorder) Poll(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Poll", reflect.TypeOf((*MockSyncDataServer)(nil).Poll), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "pull", reflect.TypeOf((*MockSyncDataServer)(nil).Poll), arg0, arg1)
 }
 
 // Push mocks base method.
