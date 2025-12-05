@@ -50,8 +50,8 @@ func (ds *DataServer) Push(ctx context.Context, request *pb.PushRequest) (*pb.Pu
 
 func (ds *DataServer) PushStream(stream pb.SyncData_PushStreamServer) error {
 	ctx := stream.Context()
+	logger := logging.Logger(ctx)
 	for {
-		logger := logging.Logger(ctx)
 		var resp pb.PushResponse
 		req, err := stream.Recv()
 		if err != nil {
@@ -145,94 +145,6 @@ func (ds *DataServer) PullStream(in *pb.PullStreamRequest, stream pb.SyncData_Pu
 		}
 	}
 	return nil
-	//ctx := stream.Context()
-	//logger := logging.Logger(ctx)
-	//data, version, err := ds.app.pull(ctx, in.GetSince())
-	//if err != nil {
-	//	return status.Error(codes.Internal, err.Error())
-	//}
-	//loggerSg := logger.Sugar()
-	//loggerSg.Infof("changes: %d; last version: %d", len(data), version)
-	//for _, d := range data {
-	//	var poll pb.pull
-	//	poll.SetServerVersion(version)
-	//	md := toMetadata(d)
-	//	dt := toData(d)
-	//	if d.Deleted {
-	//		poll.SetMetadata(md)
-	//		poll.SetData(dt)
-	//		poll.SetType(pb.RequestType_Default)
-	//		if err = stream.Send(&poll); err != nil {
-	//			return status.Error(codes.Internal, err.Error())
-	//		}
-	//		continue
-	//	}
-	//	if d.BigData {
-	//		poll.SetType(pb.RequestType_StartData)
-	//		poll.SetMetadata(md)
-	//		if err = stream.Send(&poll); err != nil {
-	//			return status.Error(codes.Internal, err.Error())
-	//		}
-	//		file, err := ds.app.OpenFile(d.Path)
-	//		if err != nil {
-	//			if !os.IsNotExist(err) {
-	//				return status.Error(codes.Internal, err.Error())
-	//			}
-	//			poll = pb.pull{}
-	//			poll.SetServerVersion(version)
-	//			poll.SetType(pb.RequestType_ErrData)
-	//			poll.SetMetadata(md)
-	//			continue
-	//		}
-	//		defer func(file io.ReadCloser) {
-	//			err := file.Close()
-	//			if err != nil {
-	//				logger.Warn("failed to close file", zap.Error(err))
-	//			}
-	//		}(file)
-	//		buffer := make([]byte, shared.MB)
-	//		for {
-	//			poll = pb.pull{}
-	//			poll.SetServerVersion(version)
-	//			poll.SetType(pb.RequestType_FilePart)
-	//			poll.SetMetadata(md)
-	//
-	//			n, err := file.Read(buffer)
-	//			if err != nil {
-	//				if err == io.EOF {
-	//					break
-	//				}
-	//				return status.Error(codes.Internal, err.Error())
-	//			}
-	//			if n == 0 {
-	//				break
-	//			}
-	//			poll.SetChunk(buffer[:n])
-	//			if err = stream.Send(&poll); err != nil {
-	//				return status.Error(codes.Internal, err.Error())
-	//			}
-	//		}
-	//		poll = pb.pull{}
-	//		poll.SetServerVersion(version)
-	//		poll.SetType(pb.RequestType_EndData)
-	//		poll.SetMetadata(md)
-	//		poll.SetData(dt)
-	//		if err = stream.Send(&poll); err != nil {
-	//
-	//			logger.Error(err.Error())
-	//			return status.Error(codes.Internal, err.Error())
-	//		}
-	//
-	//	} else {
-	//		poll.SetMetadata(md)
-	//		poll.SetData(dt)
-	//		poll.SetType(pb.RequestType_Default)
-	//		if err = stream.Send(&poll); err != nil {
-	//			return status.Error(codes.Internal, err.Error())
-	//		}
-	//	}
-	//}
-	//return nil
 }
 
 func toPushUnaryRequest(ctx context.Context, push *pb.PushRequest) (*usecase.PushUnaryRequest, error) {

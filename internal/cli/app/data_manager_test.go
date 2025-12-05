@@ -22,7 +22,7 @@ func TestCreateLoginPassShouldBeSuccess(t *testing.T) {
 	request := &RecordRequest{
 		Type: core.LoginPassType, Name: "Test", Login: "Login", Pass: "Pass", Url: "http:",
 	}
-	id, err := manager.createRecord(ctx, request)
+	id, err := manager.Create(ctx, request, false)
 
 	assert.NoError(t, err)
 	assert.NotEmpty(t, id)
@@ -63,7 +63,7 @@ func TestUpdateLoginPassShouldBeSuccess(t *testing.T) {
 	request := &RecordRequest{
 		Type: core.LoginPassType, Name: "NoTest", Login: "NoLogin", Pass: "NoPass", Url: "http:",
 	}
-	id, err = manager.updateRecord(ctx, id, request)
+	id, err = manager.Update(ctx, id, request, false)
 
 	r, err := persistence.GetRecordByID(ctx, manager.db, id)
 	if err != nil {
@@ -99,7 +99,7 @@ func TestCreateTextContentShouldBeSuccess(t *testing.T) {
 	request := &RecordRequest{
 		Type: core.TextType, Name: "test text content", Content: "yep, its content",
 	}
-	id, err := manager.createRecord(ctx, request)
+	id, err := manager.Create(ctx, request, false)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, id)
 
@@ -137,7 +137,7 @@ func TestUpdateTextContentShouldBeSuccess(t *testing.T) {
 	request := &RecordRequest{
 		Type: core.TextType, Name: "test text content, updated", Content: "yep, its content",
 	}
-	id, err = manager.updateRecord(ctx, id, request)
+	id, err = manager.Update(ctx, id, request, false)
 
 	r, err := persistence.GetRecordByID(ctx, manager.db, id)
 	if err != nil {
@@ -180,7 +180,7 @@ func TestCreateBankCardShouldBeSuccess(t *testing.T) {
 		Currency:   "USD",
 		IsPrimary:  true,
 	}
-	id, err := manager.createRecord(ctx, request)
+	id, err := manager.Create(ctx, request, false)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, id)
 
@@ -235,7 +235,7 @@ func TestUpdateBankCardShouldBeSuccess(t *testing.T) {
 		Currency:   "USD",
 		IsPrimary:  false,
 	}
-	id, err = manager.updateRecord(ctx, id, request)
+	id, err = manager.Update(ctx, id, request, false)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, id)
 
@@ -295,7 +295,7 @@ func TestCreateBigBinaryShouldBeSuccess(t *testing.T) {
 		Type: core.OtherType,
 		Path: filePath,
 	}
-	id, err := manager.createRecord(ctx, request)
+	id, err := manager.Create(ctx, request, false)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, id)
 
@@ -337,7 +337,7 @@ func TestCreateNotBigBinaryShouldBeSuccess(t *testing.T) {
 		Type: core.OtherType,
 		Path: filePath,
 	}
-	id, err := manager.createRecord(ctx, request)
+	id, err := manager.Create(ctx, request, false)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, id)
 
@@ -423,7 +423,7 @@ func configure(t *testing.T) (context.Context, *DataManager, func() error) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := persistence.Migrate(db, ""); err != nil {
+	if err := persistence.Migrate(db); err != nil {
 		t.Fatal(err)
 	}
 	return ctx, NewDataService(db, encoder, decoder, &mockSyncer{}, fileProvider), func() error {

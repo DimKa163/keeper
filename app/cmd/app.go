@@ -42,7 +42,7 @@ func New() (*CMD, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err = persistence.Migrate(db, "./internal/cli/migrations"); err != nil {
+	if err = persistence.Migrate(db); err != nil {
 		return nil, err
 	}
 	fileProvider := shared.NewFileProvider(fmt.Sprintf("%s\\", dir))

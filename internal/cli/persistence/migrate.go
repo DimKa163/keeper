@@ -6,7 +6,7 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-func Migrate(db *sql.DB, path string) error {
+func Migrate(db *sql.DB) error {
 	sql := `CREATE TABLE IF NOT EXISTS sync_state(
 			    id TEXT PRIMARY KEY,
 			    value INTEGER NOT NULL
@@ -16,8 +16,8 @@ func Migrate(db *sql.DB, path string) error {
 			
 			CREATE TABLE IF NOT EXISTS records (
 			    id          TEXT PRIMARY KEY,
-			    created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-			    modified_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			    created_at  DATETIME NOT NULL,
+			    modified_at DATETIME NOT NULL,
 			    type        INTEGER NOT NULL,
 			    big_data  	BOOLEAN NOT NULL DEFAULT 0,
 			    data        BLOB NULL,

@@ -16,8 +16,6 @@ import (
 	"reflect"
 )
 
-var ErrCorruptedData = errors.New("corrupted data")
-
 var ErrConflictData = errors.New("conflict detected! pull first")
 var syncTypeName = reflect.TypeOf(core.Record{}).Name()
 
@@ -127,7 +125,7 @@ func (ss *SyncService) push(ctx context.Context, tx *sql.Tx, syncState *core.Syn
 		return err
 	}
 	for _, record := range records {
-		if !record.BigData {
+		if !record.BigData || record.Deleted {
 			continue
 		}
 		if err = ss.sendFile(ctx, record); err != nil {
@@ -197,10 +195,19 @@ func (ss *SyncService) pull(ctx context.Context, tx *sql.Tx, syncState *core.Syn
 			return err
 		}
 		if record != nil {
-			if !record.ModifiedAt.Equal(item.GetModifiedAt().AsTime()) && record.Version <= item.GetVersion() && !force {
+			if record.Version > syncState.Value &&
+				!record.ModifiedAt.Equal(item.GetModifiedAt().AsTime()) &&
+				record.Version <= item.GetVersion() &&
+				!force {
 				hasConflict = true
 				fmt.Printf("detected conflict for secret %s\n", item.GetId())
 				if err = ss.createConflict(ctx, tx, record, item); err != nil {
+					return err
+				}
+				continue
+			}
+			if item.GetDeleted() {
+				if err = ss.delete(ctx, tx, record); err != nil {
 					return err
 				}
 				continue
@@ -209,6 +216,9 @@ func (ss *SyncService) pull(ctx context.Context, tx *sql.Tx, syncState *core.Syn
 				return err
 			}
 		} else {
+			if item.GetDeleted() {
+				continue
+			}
 			if err = ss.create(ctx, tx, item); err != nil {
 				return err
 			}
@@ -236,7 +246,7 @@ func (ss *SyncService) createConflict(
 	target *core.Record,
 	secret *pb.Secret,
 ) error {
-	if secret.GetIsBig() {
+	if secret.GetIsBig() && !secret.GetDeleted() {
 		var pollStream pb.PullStreamRequest
 		pollStream.SetId(secret.GetId())
 		pollStream.SetVersion(secret.GetVersion())
@@ -354,6 +364,15 @@ func (ss *SyncService) update(ctx context.Context, tx *sql.Tx, target *core.Reco
 	return persistence.TxUpdateRecord(ctx, tx, target)
 }
 
+func (ss *SyncService) delete(ctx context.Context, tx *sql.Tx, target *core.Record) error {
+	if target.BigData {
+		if err := ss.fileProvider.Remove(target.ID, target.Version); err != nil {
+			return err
+		}
+	}
+	return persistence.TxDeleteRecord(ctx, tx, target.ID)
+}
+
 func (ss *SyncService) updateFile(ctx context.Context, tx *sql.Tx, target *core.Record, secret *pb.Secret) error {
 	if target.Version < secret.GetVersion() {
 		var pollStream pb.PullStreamRequest
@@ -396,19 +415,13 @@ func (ss *SyncService) updateFile(ctx context.Context, tx *sql.Tx, target *core.
 				return ss.handleCorruptData(ctx, tx, target.ID)
 			}
 		}
-		if err = ss.fileProvider.Remove(target.ID, target.Version); err != nil {
-			return err
+		if target.BigData {
+			if err = ss.fileProvider.Remove(target.ID, target.Version); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
-	//
-	//target.DekNonce = secret.GetDekNonce()
-	//target.Dek = secret.GetDek()
-	//target.DataNonce = secret.GetDataNonce()
-	//target.Data = secret.GetData()
-	//target.FileNonce = secret.GetFileDataNonce()
-	//target.Version = secret.GetVersion()
-	//return persistence.TxUpdateRecord(ctx, tx, target)
 }
 
 func (ss *SyncService) handleCorruptData(ctx context.Context, tx *sql.Tx, id string) error {

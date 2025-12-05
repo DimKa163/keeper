@@ -317,12 +317,18 @@ func (dm *DataManager) deleteRecord(ctx context.Context, id string) error {
 		_ = tx.Commit()
 	}()
 	version := common.GetVersion(ctx)
+	newVersion := version + 1
 	record, err := persistence.GetRecordByID(ctx, dm.db, id)
 	if err != nil {
 		return err
 	}
+	if record.BigData {
+		if err = dm.fp.Rename(record.ID, record.Version, newVersion); err != nil {
+			return err
+		}
+	}
 	record.Deleted = true
-	record.Version = version + 1
+	record.Version = newVersion
 	if _, err = dm.update(ctx, tx, record); err != nil {
 		return err
 	}
@@ -566,13 +572,6 @@ func (dm *DataManager) update(ctx context.Context, tx *sql.Tx, record *core.Reco
 		return nil, err
 	}
 	return record, nil
-}
-
-func (dm *DataManager) delete(ctx context.Context, tx *sql.Tx, id string) error {
-	if err := persistence.TxDeleteRecord(ctx, tx, id); err != nil {
-		return err
-	}
-	return nil
 }
 
 func (dm *DataManager) applyLocal(ctx context.Context, tx *sql.Tx, conflict *core.Conflict) error {

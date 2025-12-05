@@ -24,7 +24,7 @@ func NewSyncCommandBuilder(userService *app.UserService, syncService *app.SyncSe
 
 func (scb *SyncCommandBuilder) Build() (*cobra.Command, error) {
 	cmd := &cobra.Command{
-		Use:   "syncService",
+		Use:   "sync",
 		Short: "Sync dataManager",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()

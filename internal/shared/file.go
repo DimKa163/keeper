@@ -41,6 +41,10 @@ func (fp *FileProvider) Remove(fileName string, version int32, dst ...string) er
 	return os.Remove(buildPath(fp.Path, fileName, version, dst...))
 }
 
+func (fp *FileProvider) Rename(fileName string, old, new int32) error {
+	return os.Rename(buildPath(fp.Path, fileName, old), buildPath(fp.Path, fileName, new))
+}
+
 func buildPath(root, name string, version int32, dst ...string) string {
 	if dst == nil {
 		return fmt.Sprintf("%s\\%s_%d", root, name, version)

@@ -47,8 +47,9 @@ type (
 		Deleted bool `json:"deleted"`
 	}
 	PushChunkRequest struct {
-		ID     guid.Guid `json:"id"`
-		Buffer []byte    `json:"buffer"`
+		ID         guid.Guid `json:"id"`
+		ModifiedAt time.Time `json:"modified_at"`
+		Buffer     []byte    `json:"buffer"`
 	}
 	PushFileCloseRequest struct {
 		ID         guid.Guid `json:"id"`
@@ -89,7 +90,7 @@ func (ds *DataService) Push(ctx context.Context, request *PushUnaryRequest) erro
 		state.Value += 1
 		for _, secret := range request.Secrets {
 			if secret.BigData {
-				if err = ds.applyFile(ctx, work, secret, request.Force); err != nil {
+				if err = ds.applyFile(ctx, work, state, secret, request.Force); err != nil {
 					return err
 				}
 			} else {
@@ -109,7 +110,7 @@ func (ds *DataService) Push(ctx context.Context, request *PushUnaryRequest) erro
 	return nil
 }
 
-func (ds *DataService) applyFile(ctx context.Context, uow domain.UnitOfWork, secret *Secret, force bool) error {
+func (ds *DataService) applyFile(ctx context.Context, uow domain.UnitOfWork, state *domain.SyncState, secret *Secret, force bool) error {
 	logger := logging.Logger(ctx)
 	dataRepository := uow.DataRepository()
 	data, err := dataRepository.Get(ctx, secret.ID)
@@ -122,6 +123,13 @@ func (ds *DataService) applyFile(ctx context.Context, uow domain.UnitOfWork, sec
 			return ErrDataConflict
 		}
 		data.Deleted = secret.Deleted
+		if data.Deleted {
+			if err = ds.fileProvider.Remove(data.ID.String(), data.Version); err != nil {
+				return err
+			}
+			data.ModifiedAt = secret.ModifiedAt
+			data.Version = state.Value
+		}
 		return dataRepository.Update(ctx, data)
 	}
 	data = &domain.Data{
