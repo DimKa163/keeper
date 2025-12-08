@@ -1,0 +1,76 @@
+﻿edition = "2023";
+
+package go;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/go_features.proto";
+option features.(pb.go).api_level = API_OPAQUE;
+
+option go_package = "/pb";
+enum SecretType {
+  LoginPass = 0;
+  Text = 1;
+  BankCard = 2;
+  Binary = 3;
+}
+message Secret {
+  string id = 1;
+  google.protobuf.Timestamp modified_at = 2;
+  SecretType type  = 3;
+  bool is_big = 4;
+  int32 version = 5;
+  bool deleted = 6;
+  bytes dek = 7;
+  bytes data = 8;
+}
+enum OperationType {
+  Default = 0;
+  Begin = 1;
+  BinaryPart = 2;
+  End = 3;
+}
+
+message PushOperation {
+  Secret secret = 1;
+  OperationType type = 2;
+  bytes buffer = 3;
+  bytes chunk_number = 4;
+  bytes chunk_count = 5;
+}
+
+enum ChunkType {
+  FilePart = 0;
+  EndData = 1;
+  ErrData = 2;
+}
+
+message Chunk {
+  string id = 1;
+  ChunkType type = 2;
+  bytes buffer = 3;
+  int32 version = 4;
+}
+
+message PushResponse {
+  bool success = 1;
+}
+
+message PullRequest {
+  int32 since = 2;
+}
+
+message PullResponse {
+  repeated Secret secrets = 1;
+  int32 version = 2;
+}
+
+message PullStreamRequest {
+  string id = 1;
+  int32 version = 2;
+}
+
+service Sync {
+  rpc PushStream(stream PushOperation) returns(PushResponse);
+  rpc Pull(PullRequest) returns(PullResponse);
+  rpc PullStream(PullStreamRequest) returns(stream Chunk);
+}

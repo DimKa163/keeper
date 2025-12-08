@@ -1,0 +1,22 @@
+﻿edition = "2023";
+
+package go;
+
+import "google/protobuf/go_features.proto";
+option features.(pb.go).api_level = API_OPAQUE;
+
+option go_package = "/pb";
+
+message User {
+  string login = 1;
+  string password = 2;
+}
+
+message UserResponse {
+  string token = 1;
+}
+
+service Users {
+  rpc Login(User) returns (UserResponse);
+  rpc Register(User) returns (UserResponse);
+}

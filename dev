@@ -1,0 +1,4 @@
+﻿migrate create -ext sql -dir migrations -seq create_{}_table
+
+mockgen -source=I:\Goland\keeper\internal\server\domain\user.go -destination=I:\Goland\keeper\internal\mocks\mock_user_repository.go -package=mocks UserRepository
+mockgen -source=I:\Goland\keeper\internal\server\domain\uow.go -destination=I:\Goland\keeper\internal\mocks\mock_uow.go -package=mocks UnitOfWork
