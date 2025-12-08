@@ -24,7 +24,7 @@ import (
 type ServiceContainer struct {
 	DB          *sql.DB
 	UserService *app.UserService
-	SyncService *app.SyncService
+	SyncService app.Syncer
 	DataService *app.DataManager
 	Decoder     core.Decoder
 	Encoder     core.Encoder
@@ -173,13 +173,13 @@ func (cmd *CMD) Execute() error {
 	return cmd.root.ExecuteContext(ctx)
 }
 
-func createSyncService(db *sql.DB, fp *shared.FileProvider) (*app.SyncService, error) {
+func createSyncService(db *sql.DB, fp *shared.FileProvider) (app.Syncer, error) {
 	serv, err := persistence.GetServer(context.Background(), db, true)
 	if err != nil {
 		if !errors.Is(err, sql.ErrNoRows) {
 			return nil, err
 		}
-		return nil, nil
+		return app.NewEmptySyncer(), nil
 	}
 	client, err := app.NewRemoteClient(serv.Address, serv.Login, serv.Password)
 	if err != nil {
@@ -202,11 +202,4 @@ func createDirIfNotExist() (string, string, error) {
 		err = os.Mkdir(dir, os.ModePerm)
 	}
 	return dir, fmt.Sprintf("%s\\keeper.db", dir), err
-}
-
-func ifNan(value string) string {
-	if value == "" {
-		return "N/A"
-	}
-	return value
 }

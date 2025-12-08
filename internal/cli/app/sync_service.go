@@ -33,6 +33,7 @@ type (
 type Syncer interface {
 	Sync(ctx context.Context, option *SyncOption) error
 }
+
 type PushSecretStream grpc.ClientStreamingClient[pb.PushOperation, pb.PushResponse]
 
 type SyncService struct {
@@ -524,4 +525,13 @@ func toSecret(record *core.Record) *pb.Secret {
 		secret.SetType(pb.SecretType_Binary)
 	}
 	return &secret
+}
+
+type EmptySyncer struct{}
+
+func NewEmptySyncer() *EmptySyncer {
+	return &EmptySyncer{}
+}
+func (e EmptySyncer) Sync(ctx context.Context, option *SyncOption) error {
+	return nil
 }

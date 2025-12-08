@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func BindSyncCommand(root *cobra.Command, userService *app.UserService, syncService *app.SyncService) error {
+func BindSyncCommand(root *cobra.Command, userService *app.UserService, syncService app.Syncer) error {
 	var key string
 	var pull bool
 	var push bool

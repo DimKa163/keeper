@@ -12,7 +12,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func BindConflictSolveCommand(root *cobra.Command, dataManager *app.DataManager, userService *app.UserService, syncService *app.SyncService) error {
+func BindConflictSolveCommand(
+	root *cobra.Command,
+	dataManager *app.DataManager,
+	userService *app.UserService,
+	syncService app.Syncer,
+) error {
 	var key string
 	cmd := &cobra.Command{
 		Use: "resolve-conflict",

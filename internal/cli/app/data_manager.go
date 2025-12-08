@@ -154,12 +154,12 @@ func (dm *DataManager) GetAll(ctx context.Context, limit, offset int32) ([]*core
 	return persistence.GetAllRecord(ctx, dm.db, limit, offset)
 }
 
-func (dm *DataManager) Create(ctx context.Context, request *RecordRequest, populate bool) (string, error) {
+func (dm *DataManager) Create(ctx context.Context, request *RecordRequest, sync bool) (string, error) {
 	id, err := dm.createRecord(ctx, request)
 	if err != nil {
 		return "", err
 	}
-	if populate && dm.syncManager != nil {
+	if sync {
 		if err = dm.syncManager.Sync(ctx, &SyncOption{}); err != nil {
 			return "", err
 		}
@@ -167,12 +167,12 @@ func (dm *DataManager) Create(ctx context.Context, request *RecordRequest, popul
 	return id, nil
 }
 
-func (dm *DataManager) Update(ctx context.Context, id string, request *RecordRequest, populate bool) (string, error) {
+func (dm *DataManager) Update(ctx context.Context, id string, request *RecordRequest, sync bool) (string, error) {
 	id, err := dm.updateRecord(ctx, id, request)
 	if err != nil {
 		return "", err
 	}
-	if populate && dm.syncManager != nil {
+	if sync {
 		if err = dm.syncManager.Sync(ctx, &SyncOption{}); err != nil {
 			return "", err
 		}
@@ -180,11 +180,11 @@ func (dm *DataManager) Update(ctx context.Context, id string, request *RecordReq
 	return id, nil
 }
 
-func (dm *DataManager) Delete(ctx context.Context, id string, populate bool) error {
+func (dm *DataManager) Delete(ctx context.Context, id string, sync bool) error {
 	if err := dm.deleteRecord(ctx, id); err != nil {
 		return err
 	}
-	if populate && dm.syncManager != nil {
+	if sync {
 		if err := dm.syncManager.Sync(ctx, &SyncOption{}); err != nil {
 			return err
 		}
