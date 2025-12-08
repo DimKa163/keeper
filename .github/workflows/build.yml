@@ -1,4 +1,4 @@
-﻿name: Build Keeper
+﻿name: build keeper
 
 on:
   pull_request:
