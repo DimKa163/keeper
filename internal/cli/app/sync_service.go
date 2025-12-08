@@ -180,7 +180,7 @@ func (ss *SyncService) pull(ctx context.Context, tx *sql.Tx, syncState *core.Syn
 	if err != nil {
 		return err
 	}
-	syncState.Value = resp.GetVersion()
+
 	var hasConflict bool
 	for _, item := range resp.GetSecrets() {
 		var record *core.Record
@@ -224,6 +224,7 @@ func (ss *SyncService) pull(ctx context.Context, tx *sql.Tx, syncState *core.Syn
 		fmt.Printf("❗😠detected conflict. count %d\n", count)
 		return nil
 	}
+	syncState.Value = resp.GetVersion()
 	if err = persistence.SaveState(ctx, tx, syncState); err != nil {
 		return err
 	}
@@ -293,7 +294,7 @@ func (ss *SyncService) createConflict(
 }
 func (ss *SyncService) update(ctx context.Context, tx *sql.Tx, target *core.Record, secret *pb.Secret) error {
 	if secret.GetIsBig() {
-		if err := ss.updateFile(ctx, tx, target, secret); err != nil {
+		if err := ss.updateFile(ctx, target, secret); err != nil {
 			return err
 		}
 	}
@@ -305,7 +306,7 @@ func (ss *SyncService) update(ctx context.Context, tx *sql.Tx, target *core.Reco
 	return persistence.TxUpdateRecord(ctx, tx, target)
 }
 
-func (ss *SyncService) updateFile(ctx context.Context, tx *sql.Tx, target *core.Record, secret *pb.Secret) error {
+func (ss *SyncService) updateFile(ctx context.Context, target *core.Record, secret *pb.Secret) error {
 	if target.Version < secret.GetVersion() {
 		var pollStream pb.PullStreamRequest
 		pollStream.SetId(target.ID)
@@ -360,14 +361,14 @@ func (ss *SyncService) updateFile(ctx context.Context, tx *sql.Tx, target *core.
 func (ss *SyncService) create(ctx context.Context, tx *sql.Tx, secret *pb.Secret) error {
 	record := toRecord(secret)
 	if record.BigData {
-		if err := ss.createFile(ctx, tx, secret); err != nil {
+		if err := ss.createFile(ctx, secret); err != nil {
 			return err
 		}
 	}
 	return persistence.TxInsertRecord(ctx, tx, record)
 }
 
-func (ss *SyncService) createFile(ctx context.Context, tx *sql.Tx, secret *pb.Secret) error {
+func (ss *SyncService) createFile(ctx context.Context, secret *pb.Secret) error {
 	var pollStream pb.PullStreamRequest
 	pollStream.SetId(secret.GetId())
 	pollStream.SetVersion(secret.GetVersion())
@@ -424,12 +425,7 @@ func (ss *SyncService) delete(ctx context.Context, tx *sql.Tx, target *core.Reco
 }
 
 func isConflictDetected(record *core.Record, secret *pb.Secret, syncState *core.SyncState) bool {
-	return record.IsChanged(syncState) && isSecretChanged(record, secret)
-}
-
-func isSecretChanged(record *core.Record, secret *pb.Secret) bool {
-	return !record.ModifiedAt.Equal(secret.GetModifiedAt().AsTime()) &&
-		record.Version <= secret.GetVersion()
+	return record.IsChanged(syncState) && !record.ModifiedAt.Equal(secret.GetModifiedAt().AsTime())
 }
 
 func toDefault(record *core.Record) *pb.PushOperation {

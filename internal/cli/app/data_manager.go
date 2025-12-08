@@ -364,14 +364,14 @@ func (dm *DataManager) processLoginPass(ctx context.Context, record *core.Record
 		return nil, err
 	}
 	version := common.GetVersion(ctx)
-	var model *core.LoginPass
+	var model core.LoginPass
 	if record.Data != nil {
 		var it *core.LoginPass
 		it, err = record.DecodeLoginPass(dm.decoder, masterKey)
 		if err != nil {
 			return nil, err
 		}
-		model = it
+		model = *it
 	}
 	if data.Name != "" {
 		model.Name = data.Name
@@ -413,14 +413,14 @@ func (dm *DataManager) processText(ctx context.Context, record *core.Record, dat
 	if err != nil {
 		return nil, err
 	}
-	var model *core.Text
+	var model core.Text
 	if record.Data != nil {
 		var it *core.Text
 		it, err = record.DecodeText(dm.decoder, masterKey)
 		if err != nil {
 			return nil, err
 		}
-		model = it
+		model = *it
 	}
 	if data.Name != "" {
 		model.Name = data.Name
@@ -456,14 +456,14 @@ func (dm *DataManager) processBankCard(ctx context.Context, record *core.Record,
 	if err != nil {
 		return nil, err
 	}
-	var model *core.BankCard
+	var model core.BankCard
 	if record.Data != nil {
 		var card *core.BankCard
 		card, err = record.DecodeBankCard(dm.decoder, masterKey)
 		if err != nil {
 			return nil, err
 		}
-		model = card
+		model = *card
 	}
 	if data.Name != "" {
 		model.Name = data.Name
@@ -518,7 +518,7 @@ func (dm *DataManager) processBinary(ctx context.Context, record *core.Record, d
 	if err != nil {
 		return nil, err
 	}
-	if stat.Size() > shared.MB*500 {
+	if stat.Size() > shared.MB*50 {
 		return nil, ErrFileToBig
 	}
 	masterKey, err := common.GetMasterKey(ctx)
@@ -578,7 +578,7 @@ func (dm *DataManager) processBinary(ctx context.Context, record *core.Record, d
 }
 
 func (dm *DataManager) writeFile(content, dek []byte, record *core.Record, version int32) error {
-	f, err := dm.fp.OpenWrite(record.ID, version+1)
+	f, err := dm.fp.OpenWrite(record.ID, version)
 	if err != nil {
 		return err
 	}
@@ -619,9 +619,7 @@ func (dm *DataManager) applyLocal(ctx context.Context, tx *sql.Tx, conflict *cor
 		if err := dm.fp.Remove(remote.ID, remote.Version, "remote"); err != nil {
 			return err
 		}
-		return nil
 	}
-	local.Version = remote.Version + 1
 	if err := persistence.TxUpdateRecord(ctx, tx, local); err != nil {
 		return err
 	}
@@ -641,7 +639,6 @@ func (dm *DataManager) applyRemote(ctx context.Context, tx *sql.Tx, conflict *co
 			return err
 		}
 	}
-	remote.Version += 1
 	if err := persistence.TxUpdateRecord(ctx, tx, remote); err != nil {
 		return err
 	}
