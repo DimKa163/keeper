@@ -1,8 +1,8 @@
-﻿name: Build Keeper
+﻿name: build keeper
 
 on:
-  push:
   pull_request:
+  push:
     branches: [ main ]
 
 jobs:
