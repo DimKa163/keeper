@@ -37,7 +37,7 @@ type RecordRequest struct {
 	Name       string `json:"name"`
 	Login      string `json:"login"`
 	Pass       string `json:"pass"`
-	Url        string `json:"url"`
+	URL        string `json:"url"`
 	Content    string `json:"content"`
 	CardNumber string `json:"card_number"`
 	Expiry     string `json:"expiry"`
@@ -364,13 +364,14 @@ func (dm *DataManager) processLoginPass(ctx context.Context, record *core.Record
 		return nil, err
 	}
 	version := common.GetVersion(ctx)
-	var model core.LoginPass
+	var model *core.LoginPass
 	if record.Data != nil {
-		it, err := record.DecodeLoginPass(dm.decoder, masterKey)
+		var it *core.LoginPass
+		it, err = record.DecodeLoginPass(dm.decoder, masterKey)
 		if err != nil {
 			return nil, err
 		}
-		model = *it
+		model = it
 	}
 	if data.Name != "" {
 		model.Name = data.Name
@@ -381,8 +382,8 @@ func (dm *DataManager) processLoginPass(ctx context.Context, record *core.Record
 	if data.Pass != "" {
 		model.Pass = data.Pass
 	}
-	if data.Url != "" {
-		model.Url = data.Url
+	if data.URL != "" {
+		model.URL = data.URL
 	}
 	js, err := json.Marshal(model)
 	if err != nil {
@@ -412,13 +413,14 @@ func (dm *DataManager) processText(ctx context.Context, record *core.Record, dat
 	if err != nil {
 		return nil, err
 	}
-	var model core.Text
+	var model *core.Text
 	if record.Data != nil {
-		it, err := record.DecodeText(dm.decoder, masterKey)
+		var it *core.Text
+		it, err = record.DecodeText(dm.decoder, masterKey)
 		if err != nil {
 			return nil, err
 		}
-		model = *it
+		model = it
 	}
 	if data.Name != "" {
 		model.Name = data.Name
@@ -454,13 +456,14 @@ func (dm *DataManager) processBankCard(ctx context.Context, record *core.Record,
 	if err != nil {
 		return nil, err
 	}
-	var model core.BankCard
+	var model *core.BankCard
 	if record.Data != nil {
-		card, err := record.DecodeBankCard(dm.decoder, masterKey)
+		var card *core.BankCard
+		card, err = record.DecodeBankCard(dm.decoder, masterKey)
 		if err != nil {
 			return nil, err
 		}
-		model = *card
+		model = card
 	}
 	if data.Name != "" {
 		model.Name = data.Name
@@ -531,13 +534,15 @@ func (dm *DataManager) processBinary(ctx context.Context, record *core.Record, d
 	}
 
 	file, err := os.Open(data.Path)
-	defer file.Close()
 	if err != nil {
 		return nil, err
 	}
+	defer file.Close()
 	content := make([]byte, stat.Size())
 	_, err = file.Read(content)
-
+	if err != nil {
+		return nil, err
+	}
 	model := core.Binary{
 		Name:      stat.Name(),
 		SizeBytes: stat.Size(),
@@ -548,16 +553,7 @@ func (dm *DataManager) processBinary(ctx context.Context, record *core.Record, d
 		return nil, err
 	}
 	if record.BigData {
-		f, err := dm.fp.OpenWrite(record.ID, version+1)
-		if err != nil {
-			return nil, err
-		}
-		defer f.Close()
-		cipherData, err := dm.encoder.Encode(content, dek)
-		if err != nil {
-			return nil, err
-		}
-		if _, err = f.Write(cipherData); err != nil {
+		if err = dm.writeFile(content, dek, record, version+1); err != nil {
 			return nil, err
 		}
 	} else {
@@ -573,10 +569,29 @@ func (dm *DataManager) processBinary(ctx context.Context, record *core.Record, d
 	}
 	record.Data = mdCipher
 	cipherDek, err := dm.encoder.Encode(dek, masterKey)
-
+	if err != nil {
+		return nil, err
+	}
 	record.Dek = cipherDek
 	record.Version = version + 1
 	return record, nil
+}
+
+func (dm *DataManager) writeFile(content, dek []byte, record *core.Record, version int32) error {
+	f, err := dm.fp.OpenWrite(record.ID, version+1)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	var cipherData []byte
+	cipherData, err = dm.encoder.Encode(content, dek)
+	if err != nil {
+		return err
+	}
+	if _, err = f.Write(cipherData); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (dm *DataManager) insert(ctx context.Context, tx *sql.Tx, record *core.Record) (string, error) {

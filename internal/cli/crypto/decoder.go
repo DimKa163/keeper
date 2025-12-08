@@ -1,3 +1,4 @@
+// Package crypto tools to crypt/encrypt data
 package crypto
 
 import (

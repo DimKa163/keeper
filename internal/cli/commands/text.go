@@ -63,7 +63,7 @@ func BindUpdateTextCommand(root *cobra.Command, userService *app.UserService, da
 				return err
 			}
 			ctx = common.SetMasterKey(ctx, masterKey)
-			id, err := dataManager.Update(
+			id, err = dataManager.Update(
 				ctx,
 				id,
 				&app.RecordRequest{Type: core.TextType, Name: name, Content: content},

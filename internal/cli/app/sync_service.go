@@ -145,7 +145,7 @@ func (ss *SyncService) pushFile(stream PushSecretStream, record *core.Record) er
 		return err
 	}
 	defer func(reader io.ReadCloser) {
-		err := reader.Close()
+		err = reader.Close()
 		if err != nil {
 			fmt.Printf("failed to close file: %s\n", err)
 		}
@@ -183,7 +183,8 @@ func (ss *SyncService) pull(ctx context.Context, tx *sql.Tx, syncState *core.Syn
 	syncState.Value = resp.GetVersion()
 	var hasConflict bool
 	for _, item := range resp.GetSecrets() {
-		record, err := persistence.TxGetRecordByID(ctx, tx, item.GetId())
+		var record *core.Record
+		record, err = persistence.TxGetRecordByID(ctx, tx, item.GetId())
 		if err != nil && !errors.Is(err, sql.ErrNoRows) {
 			return err
 		}
@@ -215,7 +216,8 @@ func (ss *SyncService) pull(ctx context.Context, tx *sql.Tx, syncState *core.Syn
 		}
 	}
 	if hasConflict {
-		count, err := persistence.TxGetConflictCount(ctx, tx)
+		var count int64
+		count, err = persistence.TxGetConflictCount(ctx, tx)
 		if err != nil {
 			return err
 		}
@@ -317,13 +319,14 @@ func (ss *SyncService) updateFile(ctx context.Context, tx *sql.Tx, target *core.
 			return err
 		}
 		defer func(file io.WriteCloser) {
-			err := file.Close()
+			err = file.Close()
 			if err != nil {
 				fmt.Printf("failed to close file: %s\n", err)
 			}
 		}(file)
 		for {
-			chunk, err := stream.Recv()
+			var chunk *pb.Chunk
+			chunk, err = stream.Recv()
 			if err != nil {
 				if errors.Is(err, io.EOF) {
 					break
@@ -335,7 +338,8 @@ func (ss *SyncService) updateFile(ctx context.Context, tx *sql.Tx, target *core.
 				buffer := chunk.GetBuffer()
 				written := 0
 				for written < len(buffer) {
-					n, err := file.Write(buffer[written:])
+					var n int
+					n, err = file.Write(buffer[written:])
 					if err != nil {
 						return err
 					}
@@ -494,7 +498,7 @@ func toRecord(secret *pb.Secret) *core.Record {
 func getState(ctx context.Context, tx *sql.Tx) (*core.SyncState, error) {
 	syncState, err := persistence.TxGetState(ctx, tx, syncTypeName)
 	if err != nil {
-		if !errors.Is(sql.ErrNoRows, err) {
+		if !errors.Is(err, sql.ErrNoRows) {
 			return nil, err
 		}
 		syncState = &core.SyncState{

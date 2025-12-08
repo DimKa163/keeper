@@ -1,3 +1,4 @@
+// Package security tools for authentification
 package security
 
 import (

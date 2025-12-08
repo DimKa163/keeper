@@ -1,3 +1,4 @@
+// Package shared common tools
 package shared
 
 import (

@@ -1,3 +1,4 @@
+// Package core describe models
 package core
 
 type Binary struct {

@@ -4,5 +4,5 @@ type LoginPass struct {
 	Name  string `json:"name"`
 	Login string `json:"login"`
 	Pass  string `json:"pass"`
-	Url   string `json:"url"`
+	URL   string `json:"url"`
 }

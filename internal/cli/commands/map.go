@@ -43,13 +43,13 @@ func mapLoginPass(id string, loginPass *core.LoginPass) (string, error) {
 		Name  string `json:"name"`
 		Login string `json:"login"`
 		Pass  string `json:"pass"`
-		Url   string `json:"url"`
+		URL   string `json:"url"`
 	}{
 		ID:    id,
 		Name:  loginPass.Name,
 		Login: loginPass.Login,
 		Pass:  loginPass.Pass,
-		Url:   loginPass.Url,
+		URL:   loginPass.URL,
 	}
 	jsonData, err := json.MarshalIndent(item, "", " ")
 	if err != nil {

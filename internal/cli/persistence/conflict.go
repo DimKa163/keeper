@@ -1,3 +1,4 @@
+// Package persistence db tools
 package persistence
 
 import (
@@ -51,7 +52,7 @@ func GetAllConflict(ctx context.Context, db *sql.DB) ([]*core.Conflict, error) {
 		var createdAt, modifiedAt sql.NullTime
 		var recordID string
 		var local, remote []byte
-		if err := row.Scan(&id, &createdAt, &modifiedAt, &recordID, &local, &remote); err != nil {
+		if err = row.Scan(&id, &createdAt, &modifiedAt, &recordID, &local, &remote); err != nil {
 			return nil, err
 		}
 		conflict := &core.Conflict{

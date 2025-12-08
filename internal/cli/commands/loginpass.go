@@ -16,7 +16,6 @@ func BindCreateLoginPassCommand(root *cobra.Command, userService *app.UserServic
 	var pass string
 	var url string
 	var needSync bool
-	var err error
 	cmd := &cobra.Command{
 		Use:   "create-login-pass",
 		Short: "Create login pass",
@@ -29,7 +28,7 @@ func BindCreateLoginPassCommand(root *cobra.Command, userService *app.UserServic
 			ctx = common.SetMasterKey(ctx, masterKey)
 			id, err := dataManager.Create(
 				ctx,
-				&app.RecordRequest{Type: core.LoginPassType, Name: name, Login: login, Pass: pass, Url: url},
+				&app.RecordRequest{Type: core.LoginPassType, Name: name, Login: login, Pass: pass, URL: url},
 				needSync,
 			)
 			if err != nil {
@@ -45,12 +44,10 @@ func BindCreateLoginPassCommand(root *cobra.Command, userService *app.UserServic
 	cmd.Flags().StringVarP(&pass, "pass", "p", "", "pass")
 	cmd.Flags().StringVarP(&url, "url", "u", "", "url")
 	cmd.Flags().BoolVarP(&needSync, "syncService", "s", true, "syncService")
-	err = cobra.MarkFlagRequired(cmd.Flags(), "key")
-	if err != nil {
+	if err := cobra.MarkFlagRequired(cmd.Flags(), "key"); err != nil {
 		return err
 	}
-	err = cobra.MarkFlagRequired(cmd.Flags(), "pass")
-	if err != nil {
+	if err := cobra.MarkFlagRequired(cmd.Flags(), "pass"); err != nil {
 		return err
 	}
 	root.AddCommand(cmd)
@@ -75,10 +72,10 @@ func BindUpdateLoginPassCommand(root *cobra.Command, userService *app.UserServic
 				return err
 			}
 			ctx = common.SetMasterKey(ctx, masterKey)
-			id, err := dataManager.Update(
+			id, err = dataManager.Update(
 				ctx,
 				id,
-				&app.RecordRequest{Type: core.LoginPassType, Name: name, Login: login, Pass: pass, Url: url},
+				&app.RecordRequest{Type: core.LoginPassType, Name: name, Login: login, Pass: pass, URL: url},
 				needSync,
 			)
 			if err != nil {

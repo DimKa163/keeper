@@ -1,3 +1,4 @@
+// Package cmd start up module
 package cmd
 
 import (
@@ -52,7 +53,7 @@ func New(version, commit, date string) (*CMD, error) {
 	}
 	fileProvider := shared.NewFileProvider(fmt.Sprintf("%s\\", dir))
 	syncService, err := createSyncService(db, fileProvider)
-	if err != nil && errors.Is(app.ErrServerUnavailable, err) {
+	if err != nil && errors.Is(err, app.ErrServerUnavailable) {
 		fmt.Println("remote server unavailable")
 		err = nil
 	}

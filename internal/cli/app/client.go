@@ -1,3 +1,4 @@
+// Package app main services for cli-application
 package app
 
 import (
@@ -120,8 +121,9 @@ func (h *unaryIdentifyInterceptor) Handle() grpc.UnaryClientInterceptor {
 			if e, ok := status.FromError(err); ok {
 				if e.Code() == codes.Unauthenticated {
 					h.token, err = h.login(ctx)
-					//md = metadata.New(map[string]string{"authorization": fmt.Sprintf("Bearer %s", h.token)})
-					//ctx = metadata.NewOutgoingContext(ctx, md)
+					if err != nil {
+						return err
+					}
 					err = invoker(ctx, method, req, reply, cc, opts...)
 				}
 			}

@@ -21,7 +21,7 @@ func TestCreateLoginPassShouldBeSuccess(t *testing.T) {
 	ctx, manager, cleanUp := configure(t)
 
 	request := &RecordRequest{
-		Type: core.LoginPassType, Name: "Test", Login: "Login", Pass: "Pass", Url: "http:",
+		Type: core.LoginPassType, Name: "Test", Login: "Login", Pass: "Pass", URL: "http:",
 	}
 	id, err := manager.Create(ctx, request, false)
 
@@ -45,7 +45,7 @@ func TestCreateLoginPassShouldBeSuccess(t *testing.T) {
 	assert.Equal(t, "Test", lp.Name)
 	assert.Equal(t, "Login", lp.Login)
 	assert.Equal(t, "Pass", lp.Pass)
-	assert.Equal(t, "http:", lp.Url)
+	assert.Equal(t, "http:", lp.URL)
 
 	if err := manager.db.Close(); err != nil {
 		t.Fatal(err)
@@ -62,10 +62,12 @@ func TestUpdateLoginPassShouldBeSuccess(t *testing.T) {
 		t.Fatal(err)
 	}
 	request := &RecordRequest{
-		Type: core.LoginPassType, Name: "NoTest", Login: "NoLogin", Pass: "NoPass", Url: "http:",
+		Type: core.LoginPassType, Name: "NoTest", Login: "NoLogin", Pass: "NoPass", URL: "http:",
 	}
 	id, err = manager.Update(ctx, id, request, false)
-
+	if err != nil {
+		t.Fatal(err)
+	}
 	r, err := persistence.GetRecordByID(ctx, manager.db, id)
 	if err != nil {
 		t.Fatal(err)
@@ -84,7 +86,7 @@ func TestUpdateLoginPassShouldBeSuccess(t *testing.T) {
 	assert.Equal(t, int32(1), r.Version)
 	assert.Equal(t, request.Name, lp.Name)
 	assert.Equal(t, request.Login, lp.Login)
-	assert.Equal(t, request.Url, lp.Url)
+	assert.Equal(t, request.URL, lp.URL)
 	assert.Equal(t, request.Pass, lp.Pass)
 	if err := manager.db.Close(); err != nil {
 		t.Fatal(err)
@@ -139,6 +141,9 @@ func TestUpdateTextContentShouldBeSuccess(t *testing.T) {
 		Type: core.TextType, Name: "test text content, updated", Content: "yep, its content",
 	}
 	id, err = manager.Update(ctx, id, request, false)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	r, err := persistence.GetRecordByID(ctx, manager.db, id)
 	if err != nil {
@@ -360,6 +365,9 @@ func TestUpdateBinaryShouldBeSuccess(t *testing.T) {
 	filePath := fmt.Sprintf("%s\\%s", manager.fp.Path, "TestUpdateBinaryShouldBeSuccess_old.bin")
 
 	id, err := createBinaryFile(ctx, filePath, manager)
+	if err != nil {
+		t.Fatal(err)
+	}
 	filePath = fmt.Sprintf("%s\\%s", manager.fp.Path, "TestUpdateBinaryShouldBeSuccess_new.bin")
 	file, err := os.Create(filePath)
 	if err != nil {
@@ -414,7 +422,7 @@ func configure(t *testing.T) (context.Context, *DataManager, func() error) {
 
 	decoder := crypto.NewAesDecoder()
 	if err := os.Mkdir("test", os.ModePerm); err != nil {
-
+		t.Fatal(err)
 	}
 	path := "./test"
 
@@ -433,7 +441,7 @@ func configure(t *testing.T) (context.Context, *DataManager, func() error) {
 }
 func createLoginPass(ctx context.Context, dataService *DataManager) (string, error) {
 	request := &RecordRequest{
-		Type: core.LoginPassType, Name: "Test", Login: "Login", Pass: "Pass", Url: "http:",
+		Type: core.LoginPassType, Name: "Test", Login: "Login", Pass: "Pass", URL: "http:",
 	}
 	return dataService.createRecord(ctx, request)
 }

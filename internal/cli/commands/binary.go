@@ -1,3 +1,4 @@
+// Package commands interface for cli-application
 package commands
 
 import (
@@ -80,12 +81,12 @@ func BindUpdateBinary(root *cobra.Command, userService *app.UserService, dataMan
 		Short: "update a binary file for a user",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
-			key, err := userService.Auth(ctx, key)
+			masterKey, err := userService.Auth(ctx, key)
 			if err != nil {
 				return err
 			}
-			ctx = common.SetMasterKey(ctx, key)
-			id, err := dataManager.Update(
+			ctx = common.SetMasterKey(ctx, masterKey)
+			id, err = dataManager.Update(
 				ctx,
 				id,
 				&app.RecordRequest{Type: core.OtherType, Path: path},

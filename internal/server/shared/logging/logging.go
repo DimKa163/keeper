@@ -1,3 +1,4 @@
+// Package logging logging tools
 package logging
 
 import (

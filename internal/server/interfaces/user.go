@@ -35,7 +35,7 @@ func (us *UsersServer) Login(ctx context.Context, in *pb.User) (*pb.UserResponse
 
 	token, err := us.app.Login(ctx, in.GetLogin(), in.GetPassword())
 	if err != nil {
-		if errors.Is(usecase.ErrUserNotFound, err) {
+		if errors.Is(err, usecase.ErrUserNotFound) {
 			return nil, status.Error(codes.Unauthenticated, err.Error())
 		}
 		return nil, status.Error(codes.Internal, err.Error())
@@ -52,7 +52,7 @@ func (us *UsersServer) Register(ctx context.Context, in *pb.User) (*pb.UserRespo
 	}
 	token, err := us.app.Register(ctx, in.GetLogin(), in.GetPassword())
 	if err != nil {
-		if errors.Is(usecase.ErrLoginAlreadyExists, err) {
+		if errors.Is(err, usecase.ErrLoginAlreadyExists) {
 			return nil, status.Error(codes.AlreadyExists, err.Error())
 		}
 		return nil, status.Error(codes.Internal, err.Error())

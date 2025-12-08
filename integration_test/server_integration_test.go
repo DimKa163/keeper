@@ -218,7 +218,7 @@ func run(ctx context.Context, t *testing.T, beforeFn func(pool *services) error)
 
 func configureServer(t *testing.T, serv *services, config *server2.Config) error {
 	t.Logf("configure application server on %s", config.Addr)
-	srv, err := server2.NewServer(config)
+	srv, err := server2.NewServer(config, "", "", "")
 	if err != nil {
 		return err
 	}
@@ -301,8 +301,9 @@ func (h *unaryIdentifyInterceptor) Handle() grpc.UnaryClientInterceptor {
 			if e, ok := status.FromError(err); ok {
 				if e.Code() == codes.Unauthenticated {
 					h.token, err = h.login(ctx)
-					//md = metadata.New(map[string]string{"authorization": fmt.Sprintf("Bearer %s", h.token)})
-					//ctx = metadata.NewOutgoingContext(ctx, md)
+					if err != nil {
+						return err
+					}
 					err = invoker(ctx, method, req, reply, cc, opts...)
 				}
 			}

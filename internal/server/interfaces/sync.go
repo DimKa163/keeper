@@ -49,33 +49,34 @@ func (ss *SyncServer) PushStream(stream pb.Sync_PushStreamServer) error {
 	if err = ss.app.ValidateVersion(ctx, v); err != nil && !force {
 		return status.Error(codes.FailedPrecondition, err.Error())
 	}
-	if err := ss.app.Push(ctx, func(ctx context.Context) (*usecase.Push, error) {
+	if err = ss.app.Push(ctx, func(ctx context.Context) (*usecase.Push, error) {
 		var op *pb.PushOperation
 		op, err = stream.Recv()
 		if err != nil {
 			return nil, err
 		}
+		var req *usecase.Push
 		switch op.GetType() {
 		case pb.OperationType_Default:
-			req, err := toDefault(op)
+			req, err = toDefault(op)
 			if err != nil {
 				return nil, status.Error(codes.InvalidArgument, err.Error())
 			}
 			return req, nil
 		case pb.OperationType_Begin:
-			req, err := toBeginFile(op)
+			req, err = toBeginFile(op)
 			if err != nil {
 				return nil, status.Error(codes.InvalidArgument, err.Error())
 			}
 			return req, nil
 		case pb.OperationType_BinaryPart:
-			req, err := toChunk(op)
+			req, err = toChunk(op)
 			if err != nil {
 				return nil, status.Error(codes.InvalidArgument, err.Error())
 			}
 			return req, nil
 		case pb.OperationType_End:
-			req, err := toEndFile(op)
+			req, err = toEndFile(op)
 			if err != nil {
 				return nil, status.Error(codes.InvalidArgument, err.Error())
 			}

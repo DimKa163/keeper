@@ -1,3 +1,4 @@
+// Package usecase main services
 package usecase
 
 import (
@@ -36,7 +37,7 @@ func (us *UserService) Login(ctx context.Context, login, password string) (strin
 	if err != nil {
 		return "", err
 	}
-	if err := us.authService.Authenticate([]byte(password), user.Password, user.Salt); err != nil {
+	if err = us.authService.Authenticate([]byte(password), user.Password, user.Salt); err != nil {
 		return "", err
 	}
 	token, err := us.authEngine.GenerateToken(user.ID)
@@ -61,7 +62,7 @@ func (us *UserService) Register(ctx context.Context, login, password string) (st
 			return err
 		}
 		user := domain.NewUser(login, pwd, salt)
-		if err := repository.Insert(ctx, user); err != nil {
+		if err = repository.Insert(ctx, user); err != nil {
 			return err
 		}
 		user, err = repository.Get(ctx, login)

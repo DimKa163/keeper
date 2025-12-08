@@ -22,8 +22,8 @@ func TestSyncService_Push_DefaultShouldBeSuccess(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	ctx := context.Background()
-	userId := *guid.New()
-	ctx = auth.SetUser(ctx, userId)
+	userID := *guid.New()
+	ctx = auth.SetUser(ctx, userID)
 	dek := make([]byte, 32)
 	_, _ = rand.Read(dek)
 	data := make([]byte, shared.KB)
@@ -47,7 +47,7 @@ func TestSyncService_Push_DefaultShouldBeSuccess(t *testing.T) {
 	txUow := mocks.NewMockUnitOfWork(ctrl)
 	uow := newMockUow(txUow)
 	syncRepository := mocks.NewMockSyncStateRepository(ctrl)
-	syncRepository.EXPECT().Get(ctx, syncTypeName, userId).Return(state, nil)
+	syncRepository.EXPECT().Get(ctx, syncTypeName, userID).Return(state, nil)
 	syncRepository.EXPECT().Update(ctx, &domain.SyncState{
 		ID:    syncTypeName,
 		Value: 1,
@@ -73,8 +73,8 @@ func TestSyncService_Push_FileShouldBeSuccess(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	ctx := context.Background()
-	userId := *guid.New()
-	ctx = auth.SetUser(ctx, userId)
+	userID := *guid.New()
+	ctx = auth.SetUser(ctx, userID)
 	dek := make([]byte, 32)
 	_, _ = rand.Read(dek)
 	data := make([]byte, shared.KB)
@@ -118,7 +118,7 @@ func TestSyncService_Push_FileShouldBeSuccess(t *testing.T) {
 	txUow := mocks.NewMockUnitOfWork(ctrl)
 	uow := newMockUow(txUow)
 	syncRepository := mocks.NewMockSyncStateRepository(ctrl)
-	syncRepository.EXPECT().Get(ctx, syncTypeName, userId).Return(state, nil)
+	syncRepository.EXPECT().Get(ctx, syncTypeName, userID).Return(state, nil)
 	syncRepository.EXPECT().Update(ctx, &domain.SyncState{
 		ID:    syncTypeName,
 		Value: 1,

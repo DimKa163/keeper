@@ -1,3 +1,4 @@
+// Package server
 package server
 
 import (
@@ -31,8 +32,8 @@ type ServiceContainer struct {
 	AuthEngine    auth.Engine
 	UserService   domain.UserService
 	SyncService   *usecase.SyncService
-	UserRpcServer *interfaces.UsersServer
-	SyncRpcServer *interfaces.SyncServer
+	UserRPCServer *interfaces.UsersServer
+	SyncRPCServer *interfaces.SyncServer
 	HealthServer  *interfaces.HealthService
 }
 
@@ -73,9 +74,9 @@ func (server *Server) AddServices() error {
 	server.UnitOfWork = addUnitOfWork(server.DBPool)
 	server.AuthService = addAuthService(server.Config)
 	server.UserService = addUserService(server.UnitOfWork, server.AuthService, server.AuthEngine)
-	server.UserRpcServer = interfaces.NewUserServer(server.UserService)
+	server.UserRPCServer = interfaces.NewUserServer(server.UserService)
 	server.SyncService = usecase.NewSyncService(server.UnitOfWork, data.NewFileProvider(shared.NewFileProvider(server.FilePath)))
-	server.SyncRpcServer = interfaces.NewSyncServer(server.SyncService)
+	server.SyncRPCServer = interfaces.NewSyncServer(server.SyncService)
 	return nil
 }
 
@@ -186,8 +187,8 @@ func (gs *GRPCServer) ListenAndServe() error {
 
 func (gs *GRPCServer) Map() {
 	gs.services.HealthServer.Bind(gs.Server)
-	gs.services.UserRpcServer.Bind(gs.Server)
-	gs.services.SyncRpcServer.Bind(gs.Server)
+	gs.services.UserRPCServer.Bind(gs.Server)
+	gs.services.SyncRPCServer.Bind(gs.Server)
 }
 
 func (gs *GRPCServer) Shutdown(ctx context.Context) error {

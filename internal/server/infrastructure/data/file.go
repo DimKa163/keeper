@@ -1,3 +1,4 @@
+// Package data tool for db
 package data
 
 import (

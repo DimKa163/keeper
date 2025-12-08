@@ -1,3 +1,4 @@
+// Package auth tools for authentification
 package auth
 
 import (

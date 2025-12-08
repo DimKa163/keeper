@@ -36,8 +36,8 @@ func BindConflictSolveCommand(root *cobra.Command, dataManager *app.DataManager,
 				if _, err = fmt.Scanln(&input); err != nil {
 					return err
 				}
-
-				i, err := strconv.Atoi(input)
+				var i int
+				i, err = strconv.Atoi(input)
 				if err != nil {
 					var numErr *strconv.NumError
 					if errors.As(err, &numErr) {

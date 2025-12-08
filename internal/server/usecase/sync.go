@@ -55,12 +55,12 @@ func NewSyncService(uow domain.UnitOfWork, fp domain.Filer) *SyncService {
 }
 
 func (ss *SyncService) ValidateVersion(ctx context.Context, version int32) error {
-	userId, err := auth.User(ctx)
+	userID, err := auth.User(ctx)
 	if err != nil {
 		return err
 	}
 	syncStateRepository := ss.uow.SyncStateRepository()
-	syncState, err := syncStateRepository.Get(ctx, syncTypeName, userId)
+	syncState, err := syncStateRepository.Get(ctx, syncTypeName, userID)
 	if err != nil {
 		return err
 	}
@@ -76,12 +76,12 @@ func (ss *SyncService) File(id guid.Guid, version int32) (io.ReadCloser, error) 
 
 func (ss *SyncService) Push(ctx context.Context, fn func(ctx context.Context) (*Push, error)) error {
 	if err := ss.uow.Tx(ctx, func(ctx context.Context, work domain.UnitOfWork) error {
-		userId, err := auth.User(ctx)
+		userID, err := auth.User(ctx)
 		if err != nil {
 			return err
 		}
 		syncStateRepository := work.SyncStateRepository()
-		syncState, err := syncStateRepository.Get(ctx, syncTypeName, userId)
+		syncState, err := syncStateRepository.Get(ctx, syncTypeName, userID)
 		syncState.Value += 1
 		if err != nil {
 			return err
@@ -129,12 +129,12 @@ func (ss *SyncService) Poll(ctx context.Context, since int32) ([]*domain.Secret,
 	if err != nil {
 		return nil, -1, err
 	}
-	userId, err := auth.User(ctx)
+	userID, err := auth.User(ctx)
 	if err != nil {
 		return nil, -1, err
 	}
 	syncRepository := ss.uow.SyncStateRepository()
-	state, err := syncRepository.Get(ctx, syncTypeName, userId)
+	state, err := syncRepository.Get(ctx, syncTypeName, userID)
 	if err != nil {
 		if !errors.Is(err, persistence.ErrResourceNotFound) {
 			return nil, -1, err
@@ -162,14 +162,14 @@ func (ss *SyncService) push(ctx context.Context, uow domain.UnitOfWork, state *d
 		data.Deleted = secret.Deleted
 		return dataRepository.Update(ctx, data)
 	}
-	userId, err := auth.User(ctx)
+	userID, err := auth.User(ctx)
 	if err != nil {
 		return err
 	}
 	data = &domain.Secret{
 		ID:         secret.ID,
 		ModifiedAt: secret.ModifiedAt,
-		UserID:     userId,
+		UserID:     userID,
 		Type:       secret.Type,
 		BigData:    false,
 		Dek:        secret.Dek,
@@ -198,14 +198,14 @@ func (ss *SyncService) startUploadFile(ctx context.Context, uow domain.UnitOfWor
 		}
 		return secretRep.Update(ctx, data)
 	}
-	userId, err := auth.User(ctx)
+	userID, err := auth.User(ctx)
 	if err != nil {
 		return err
 	}
 	data = &domain.Secret{
 		ID:         secret.ID,
 		ModifiedAt: secret.ModifiedAt,
-		UserID:     userId,
+		UserID:     userID,
 		Type:       secret.Type,
 		BigData:    true,
 	}
@@ -224,9 +224,7 @@ func (ss *SyncService) writeChunk(ctx context.Context, uow domain.UnitOfWork, st
 		return err
 	}
 	defer func(f io.WriteCloser) {
-		err = f.Close()
-		if err != nil {
-		}
+		_ = f.Close()
 	}(f)
 	_, err = f.Write(p.Buffer)
 	if err != nil {
