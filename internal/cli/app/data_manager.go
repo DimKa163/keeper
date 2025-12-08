@@ -18,7 +18,8 @@ import (
 )
 
 var (
-	ErrFileToBig = errors.New("file is too big")
+	ErrFileToBig      = errors.New("file is too big")
+	ErrConflictExists = errors.New("conflict exists! solve first")
 )
 
 type Version int
@@ -205,6 +206,13 @@ func (dm *DataManager) createRecord(ctx context.Context, request *RecordRequest)
 		}
 		_ = tx.Commit()
 	}()
+	ex, err := persistence.TxConflictExist(ctx, tx)
+	if err != nil {
+		return "", err
+	}
+	if ex {
+		return "", ErrConflictExists
+	}
 	switch request.Type {
 	case core.LoginPassType:
 		record, err = dm.processLoginPass(
@@ -258,6 +266,13 @@ func (dm *DataManager) updateRecord(ctx context.Context, id string, request *Rec
 		}
 		_ = tx.Commit()
 	}()
+	ex, err := persistence.TxConflictExist(ctx, tx)
+	if err != nil {
+		return "", err
+	}
+	if ex {
+		return "", ErrConflictExists
+	}
 	record, err := persistence.TxGetRecordByID(ctx, tx, id)
 	if err != nil {
 		return "", err
@@ -316,6 +331,13 @@ func (dm *DataManager) deleteRecord(ctx context.Context, id string) error {
 		}
 		_ = tx.Commit()
 	}()
+	ex, err := persistence.TxConflictExist(ctx, tx)
+	if err != nil {
+		return err
+	}
+	if ex {
+		return ErrConflictExists
+	}
 	version := common.GetVersion(ctx)
 	newVersion := version + 1
 	record, err := persistence.GetRecordByID(ctx, dm.db, id)
