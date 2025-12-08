@@ -6,13 +6,19 @@ import (
 	"github.com/caarlos0/env"
 )
 
+var (
+	Version string
+	Commit  string
+	Date    string
+)
+
 func main() {
 	var config server.Config
 	var err error
 	if err = env.Parse(&config); err != nil {
 		panic(err)
 	}
-	srv, err := server.NewServer(&config)
+	srv, err := server.NewServer(&config, Version, Commit, Date)
 	if err != nil {
 		panic(err)
 	}

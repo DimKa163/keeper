@@ -37,12 +37,15 @@ type ServiceContainer struct {
 
 type Server struct {
 	listener net.Listener
+	Version  string
+	Commit   string
+	Date     string
 	*Config
 	*ServiceContainer
 	ServerImpl
 }
 
-func NewServer(config *Config) (*Server, error) {
+func NewServer(config *Config, version, commit, date string) (*Server, error) {
 	listener, err := net.Listen("tcp", config.Addr)
 	if err != nil {
 		return nil, err
@@ -51,6 +54,9 @@ func NewServer(config *Config) (*Server, error) {
 		Config:           config,
 		ServiceContainer: &ServiceContainer{},
 		listener:         listener,
+		Version:          version,
+		Commit:           commit,
+		Date:             date,
 	}, nil
 }
 
@@ -95,9 +101,8 @@ func (server *Server) MigrateFrom(path string) error {
 func (server *Server) Run() error {
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	defer cancel()
-	////if err := persistence.Migrate(server.DBPool, "./internal/server/migrations"); err != nil {
-	//	return err
-	//}
+	logger := logging.Logger(ctx).Sugar()
+	logger.Infof("version: %s; commit: %s; data: %s", ifNan(server.Version), ifNan(server.Commit), ifNan(server.Date))
 	go func() {
 		<-ctx.Done()
 		timeoutCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
@@ -189,4 +194,11 @@ func (gs *GRPCServer) Shutdown(ctx context.Context) error {
 	gs.GracefulStop()
 	logger.Info("server shutdown gracefully")
 	return nil
+}
+
+func ifNan(value string) string {
+	if value == "" {
+		return "N/A"
+	}
+	return value
 }
