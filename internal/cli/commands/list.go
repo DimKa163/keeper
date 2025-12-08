@@ -2,23 +2,11 @@ package commands
 
 import (
 	"fmt"
+
 	"github.com/DimKa163/keeper/internal/cli/app"
 	"github.com/DimKa163/keeper/internal/cli/common"
 	"github.com/spf13/cobra"
 )
-
-//type DataListBuilder struct {
-//	userService *app.UserService
-//	dataManager *app.DataManager
-//	decoder     core.Decoder
-//	key         string
-//	limit       int32
-//	offset      int32
-//}
-//
-//func NewDataListBuilder(userService *app.UserService, dataManager *app.DataManager, decoder core.Decoder) *DataListBuilder {
-//	return &DataListBuilder{userService: userService, dataManager: dataManager, decoder: decoder}
-//}
 
 func BindListCommand(root *cobra.Command, userService *app.UserService, dataManager *app.DataManager) error {
 	var key string

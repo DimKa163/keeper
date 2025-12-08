@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
+
 	"github.com/DimKa163/keeper/internal/common"
 	"github.com/DimKa163/keeper/internal/pb"
 	"github.com/DimKa163/keeper/internal/server/domain"
@@ -16,7 +18,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
-	"io"
 )
 
 type SyncServer struct {

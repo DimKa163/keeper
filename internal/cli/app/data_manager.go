@@ -5,16 +5,17 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"github.com/DimKa163/keeper/internal/cli/common"
-	"github.com/DimKa163/keeper/internal/cli/core"
-	"github.com/DimKa163/keeper/internal/cli/crypto"
-	"github.com/DimKa163/keeper/internal/cli/persistence"
-	"github.com/DimKa163/keeper/internal/shared"
 	"io"
 	"mime"
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/DimKa163/keeper/internal/cli/common"
+	"github.com/DimKa163/keeper/internal/cli/core"
+	"github.com/DimKa163/keeper/internal/cli/crypto"
+	"github.com/DimKa163/keeper/internal/cli/persistence"
+	"github.com/DimKa163/keeper/internal/shared"
 )
 
 var (

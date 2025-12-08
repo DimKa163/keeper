@@ -4,27 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
+
 	"github.com/DimKa163/keeper/internal/cli/app"
 	"github.com/DimKa163/keeper/internal/cli/common"
 	"github.com/DimKa163/keeper/internal/cli/core"
 	"github.com/spf13/cobra"
-	"strconv"
 )
-
-type ResolveCommandBuilder struct {
-	dataManager *app.DataManager
-	userService *app.UserService
-	syncService *app.SyncService
-	key         string
-}
-
-func NewResolveCommandBuilder(dataManager *app.DataManager, user *app.UserService, syncService *app.SyncService) *ResolveCommandBuilder {
-	return &ResolveCommandBuilder{
-		dataManager: dataManager,
-		userService: user,
-		syncService: syncService,
-	}
-}
 
 func BindConflictSolveCommand(root *cobra.Command, dataManager *app.DataManager, userService *app.UserService, syncService *app.SyncService) error {
 	var key string

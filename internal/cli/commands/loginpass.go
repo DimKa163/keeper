@@ -2,29 +2,12 @@ package commands
 
 import (
 	"fmt"
+
 	"github.com/DimKa163/keeper/internal/cli/app"
 	"github.com/DimKa163/keeper/internal/cli/common"
 	"github.com/DimKa163/keeper/internal/cli/core"
 	"github.com/spf13/cobra"
 )
-
-type CreateLoginPassCommandBuilder struct {
-	userService *app.UserService
-	dataManager *app.DataManager
-	key         string
-	name        string
-	login       string
-	pass        string
-	url         string
-	needSync    bool
-}
-
-func NewCreateLoginPassBuilder(userService *app.UserService, dataManager *app.DataManager) *CreateLoginPassCommandBuilder {
-	return &CreateLoginPassCommandBuilder{
-		userService: userService,
-		dataManager: dataManager,
-	}
-}
 
 func BindCreateLoginPassCommand(root *cobra.Command, userService *app.UserService, dataManager *app.DataManager) error {
 	var key string

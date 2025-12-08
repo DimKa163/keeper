@@ -2,10 +2,11 @@ package interfaces
 
 import (
 	"context"
+	"time"
+
 	"github.com/DimKa163/keeper/internal/server/shared/logging"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
-	"time"
 )
 
 func UnaryLoggingInterceptor() grpc.UnaryServerInterceptor {

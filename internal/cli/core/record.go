@@ -2,8 +2,9 @@ package core
 
 import (
 	"encoding/json"
-	"github.com/DimKa163/keeper/internal/shared"
 	"time"
+
+	"github.com/DimKa163/keeper/internal/shared"
 
 	"github.com/beevik/guid"
 )

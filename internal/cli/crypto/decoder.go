@@ -5,8 +5,9 @@ import (
 	"compress/gzip"
 	"crypto/aes"
 	"crypto/cipher"
-	"github.com/DimKa163/keeper/internal/cli/core"
 	"io"
+
+	"github.com/DimKa163/keeper/internal/cli/core"
 )
 
 type AesDecoder struct {

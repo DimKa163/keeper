@@ -2,12 +2,13 @@ package server
 
 import (
 	"context"
-	"github.com/DimKa163/keeper/internal/server/infrastructure/data"
-	"github.com/DimKa163/keeper/internal/shared"
 	"net"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/DimKa163/keeper/internal/server/infrastructure/data"
+	"github.com/DimKa163/keeper/internal/shared"
 
 	"github.com/DimKa163/keeper/internal/server/interfaces"
 

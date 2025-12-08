@@ -3,6 +3,11 @@ package usecase
 import (
 	"context"
 	"crypto/rand"
+	"io"
+	"io/fs"
+	"testing"
+	"time"
+
 	"github.com/DimKa163/keeper/internal/mocks"
 	"github.com/DimKa163/keeper/internal/server/domain"
 	"github.com/DimKa163/keeper/internal/server/infrastructure/persistence"
@@ -11,10 +16,6 @@ import (
 	"github.com/beevik/guid"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
-	"io"
-	"io/fs"
-	"testing"
-	"time"
 )
 
 func TestSyncService_Push_DefaultShouldBeSuccess(t *testing.T) {

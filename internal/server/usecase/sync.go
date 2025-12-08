@@ -3,14 +3,15 @@ package usecase
 import (
 	"context"
 	"errors"
-	"github.com/DimKa163/keeper/internal/server/domain"
-	"github.com/DimKa163/keeper/internal/server/infrastructure/persistence"
-	"github.com/DimKa163/keeper/internal/server/shared/auth"
-	"github.com/beevik/guid"
 	"io"
 	"os"
 	"reflect"
 	"time"
+
+	"github.com/DimKa163/keeper/internal/server/domain"
+	"github.com/DimKa163/keeper/internal/server/infrastructure/persistence"
+	"github.com/DimKa163/keeper/internal/server/shared/auth"
+	"github.com/beevik/guid"
 )
 
 var syncTypeName = reflect.TypeOf(domain.Secret{}).Name()

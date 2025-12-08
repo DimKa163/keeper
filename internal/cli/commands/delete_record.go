@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+
 	"github.com/DimKa163/keeper/internal/cli/app"
 	"github.com/DimKa163/keeper/internal/cli/common"
 	"github.com/spf13/cobra"

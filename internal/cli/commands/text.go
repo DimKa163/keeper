@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+
 	"github.com/DimKa163/keeper/internal/cli/app"
 	"github.com/DimKa163/keeper/internal/cli/common"
 	"github.com/DimKa163/keeper/internal/cli/core"
@@ -44,23 +45,6 @@ func BindCreateTextCommand(root *cobra.Command, userService *app.UserService, da
 	}
 	root.AddCommand(cmd)
 	return nil
-}
-
-type UpdateTextContentCommandBuilder struct {
-	userService *app.UserService
-	dataManager *app.DataManager
-	id          string
-	key         string
-	name        string
-	content     string
-	needSync    bool
-}
-
-func NewUpdateTextContentCommandBuilder(userService *app.UserService, dataManager *app.DataManager) *UpdateTextContentCommandBuilder {
-	return &UpdateTextContentCommandBuilder{
-		userService: userService,
-		dataManager: dataManager,
-	}
 }
 
 func BindUpdateTextCommand(root *cobra.Command, userService *app.UserService, dataManager *app.DataManager) error {

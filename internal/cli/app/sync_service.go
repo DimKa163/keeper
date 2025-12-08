@@ -5,6 +5,11 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"io"
+	"os"
+	"reflect"
+	"time"
+
 	"github.com/DimKa163/keeper/internal/cli/core"
 	"github.com/DimKa163/keeper/internal/cli/persistence"
 	"github.com/DimKa163/keeper/internal/common"
@@ -12,10 +17,6 @@ import (
 	"github.com/DimKa163/keeper/internal/shared"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/timestamppb"
-	"io"
-	"os"
-	"reflect"
-	"time"
 )
 
 var ErrConflictData = errors.New("conflict detected! pull first")

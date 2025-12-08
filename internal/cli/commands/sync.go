@@ -2,25 +2,11 @@ package commands
 
 import (
 	"fmt"
+
 	"github.com/DimKa163/keeper/internal/cli/app"
 	"github.com/DimKa163/keeper/internal/cli/common"
 	"github.com/spf13/cobra"
 )
-
-type SyncCommandBuilder struct {
-	userService *app.UserService
-	syncService *app.SyncService
-	key         string
-	pull        bool
-	push        bool
-}
-
-func NewSyncCommandBuilder(userService *app.UserService, syncService *app.SyncService) *SyncCommandBuilder {
-	return &SyncCommandBuilder{
-		userService: userService,
-		syncService: syncService,
-	}
-}
 
 func BindSyncCommand(root *cobra.Command, userService *app.UserService, syncService *app.SyncService) error {
 	var key string

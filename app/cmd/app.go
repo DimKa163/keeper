@@ -5,6 +5,10 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"os"
+	"reflect"
+	"time"
+
 	"github.com/DimKa163/keeper/internal/cli/app"
 	"github.com/DimKa163/keeper/internal/cli/commands"
 	"github.com/DimKa163/keeper/internal/cli/common"
@@ -14,9 +18,6 @@ import (
 	"github.com/DimKa163/keeper/internal/shared"
 	"github.com/spf13/cobra"
 	_ "modernc.org/sqlite"
-	"os"
-	"reflect"
-	"time"
 )
 
 type ServiceContainer struct {

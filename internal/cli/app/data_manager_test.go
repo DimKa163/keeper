@@ -5,6 +5,9 @@ import (
 	"crypto/rand"
 	"database/sql"
 	"fmt"
+	"os"
+	"testing"
+
 	"github.com/DimKa163/keeper/internal/cli/common"
 	"github.com/DimKa163/keeper/internal/cli/core"
 	"github.com/DimKa163/keeper/internal/cli/crypto"
@@ -12,8 +15,6 @@ import (
 	"github.com/DimKa163/keeper/internal/shared"
 	"github.com/stretchr/testify/assert"
 	_ "modernc.org/sqlite"
-	"os"
-	"testing"
 )
 
 func TestCreateLoginPassShouldBeSuccess(t *testing.T) {

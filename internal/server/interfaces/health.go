@@ -2,6 +2,7 @@ package interfaces
 
 import (
 	"context"
+
 	"github.com/DimKa163/keeper/internal/pb"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"google.golang.org/grpc"

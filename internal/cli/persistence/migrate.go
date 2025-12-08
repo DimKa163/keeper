@@ -2,6 +2,7 @@ package persistence
 
 import (
 	"database/sql"
+
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "modernc.org/sqlite"
 )

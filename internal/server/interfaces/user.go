@@ -3,6 +3,7 @@ package interfaces
 import (
 	"context"
 	"errors"
+
 	"github.com/DimKa163/keeper/internal/server/usecase"
 
 	"github.com/DimKa163/keeper/internal/pb"

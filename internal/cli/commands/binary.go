@@ -2,11 +2,12 @@ package commands
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/DimKa163/keeper/internal/cli/app"
 	"github.com/DimKa163/keeper/internal/cli/common"
 	"github.com/DimKa163/keeper/internal/cli/core"
 	"github.com/spf13/cobra"
-	"os"
 )
 
 func BindCreateBinary(root *cobra.Command, userService *app.UserService, dataManager *app.DataManager) error {

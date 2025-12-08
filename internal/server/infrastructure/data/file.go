@@ -1,8 +1,9 @@
 package data
 
 import (
-	"github.com/DimKa163/keeper/internal/shared"
 	"io"
+
+	"github.com/DimKa163/keeper/internal/shared"
 )
 
 type FileProvider struct {
