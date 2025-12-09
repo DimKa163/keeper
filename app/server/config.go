@@ -4,7 +4,7 @@ package server
 type Config struct {
 	Addr            string `env:"ADDR" envDefault:":3300"`
 	Database        string `env:"DATABASE,required"`
-	FilePath        string `env:"FilePath" envDefault:"E:\\keeper\\"`
+	FilePath        string `env:"FilePath" envDefault:""`
 	Secret          string `env:"SECRET,required"`
 	TokenExpiration uint   `env:"TOKEN_EXPIRATION" envDefault:"3600"`
 	Memory          uint   `env:"ARGON_MEMORY" envDefault:"64"`
