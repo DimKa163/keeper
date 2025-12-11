@@ -1,4 +1,4 @@
-package shared
+package datatool
 
 const (
 	_        = iota

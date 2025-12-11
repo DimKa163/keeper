@@ -8,11 +8,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/DimKa163/keeper/internal/datatool"
 	"github.com/DimKa163/keeper/internal/mocks"
 	"github.com/DimKa163/keeper/internal/server/domain"
 	"github.com/DimKa163/keeper/internal/server/infrastructure/persistence"
 	"github.com/DimKa163/keeper/internal/server/shared/auth"
-	"github.com/DimKa163/keeper/internal/shared"
 	"github.com/beevik/guid"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -26,7 +26,7 @@ func TestSyncService_Push_DefaultShouldBeSuccess(t *testing.T) {
 	ctx = auth.SetUser(ctx, userID)
 	dek := make([]byte, 32)
 	_, _ = rand.Read(dek)
-	data := make([]byte, shared.KB)
+	data := make([]byte, datatool.KB)
 	_, _ = rand.Read(data)
 	message := &Push{
 		Type: DefaultOperation,
@@ -77,7 +77,7 @@ func TestSyncService_Push_FileShouldBeSuccess(t *testing.T) {
 	ctx = auth.SetUser(ctx, userID)
 	dek := make([]byte, 32)
 	_, _ = rand.Read(dek)
-	data := make([]byte, shared.KB)
+	data := make([]byte, datatool.KB)
 	_, _ = rand.Read(data)
 
 	msgs := make([]*Push, 3)
@@ -90,7 +90,7 @@ func TestSyncService_Push_FileShouldBeSuccess(t *testing.T) {
 			Version:    1,
 		},
 	}
-	buffer := make([]byte, shared.MB)
+	buffer := make([]byte, datatool.MB)
 	_, _ = rand.Read(buffer)
 	msgs[1] = &Push{
 		Type: ChunkOperation,

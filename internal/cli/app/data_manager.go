@@ -15,7 +15,7 @@ import (
 	"github.com/DimKa163/keeper/internal/cli/core"
 	"github.com/DimKa163/keeper/internal/cli/crypto"
 	"github.com/DimKa163/keeper/internal/cli/persistence"
-	"github.com/DimKa163/keeper/internal/shared"
+	"github.com/DimKa163/keeper/internal/datatool"
 )
 
 var (
@@ -31,30 +31,39 @@ const (
 	Remote
 )
 
-type RecordRequest struct {
-	Type       core.DataType
-	Path       string `json:"path"`
-	Name       string `json:"name"`
-	Login      string `json:"login"`
-	Pass       string `json:"pass"`
-	URL        string `json:"url"`
-	Content    string `json:"content"`
-	CardNumber string `json:"card_number"`
-	Expiry     string `json:"expiry"`
-	CVV        string `json:"cvv"`
-	HolderName string `json:"holder_name"`
-	BankName   string `json:"bank_name,omitempty"`
-	CardType   string `json:"card_type,omitempty"`
-	Currency   string `json:"currency,omitempty"`
-	IsPrimary  bool   `json:"is_primary"`
-}
+type (
+	LoginPassRequest struct {
+		Name  string `json:"name"`
+		Login string `json:"login"`
+		Pass  string `json:"pass"`
+		URL   string `json:"url"`
+	}
+	BankCardRequest struct {
+		Name       string `json:"name"`
+		CardNumber string `json:"card_number"`
+		Expiry     string `json:"expiry"`
+		CVV        string `json:"cvv"`
+		HolderName string `json:"holder_name"`
+		BankName   string `json:"bank_name"`
+		CardType   string `json:"card_type"`
+		Currency   string `json:"currency"`
+		IsPrimary  bool   `json:"is_primary"`
+	}
+	TextRequest struct {
+		Name    string `json:"name"`
+		Content string `json:"content"`
+	}
+	BinaryRequest struct {
+		Path string `json:"path"`
+	}
+)
 
 type DataManager struct {
 	db          *sql.DB
 	encoder     core.Encoder
 	decoder     core.Decoder
 	syncManager Syncer
-	fp          *shared.FileProvider
+	fp          *datatool.FileProvider
 }
 
 func NewDataService(
@@ -62,7 +71,7 @@ func NewDataService(
 	encoder core.Encoder,
 	decoder core.Decoder,
 	syncManager Syncer,
-	fileProvider *shared.FileProvider,
+	fileProvider *datatool.FileProvider,
 ) *DataManager {
 	return &DataManager{
 		db,
@@ -80,6 +89,11 @@ func (dm *DataManager) Get(ctx context.Context, id string) (*core.Record, error)
 		return nil, err
 	}
 	return record, nil
+}
+
+// GetAll get all not deleted and not corrupted secrets
+func (dm *DataManager) GetAll(ctx context.Context, limit, offset int32) ([]*core.Record, error) {
+	return persistence.GetAllRecord(ctx, dm.db, limit, offset)
 }
 
 // ExtractFile read file and decode it for export
@@ -149,53 +163,149 @@ func (dm *DataManager) DeleteConflict(ctx context.Context, conflict *core.Confli
 	return persistence.DeleteConflict(ctx, dm.db, conflict.ID)
 }
 
-// GetAll get all not deleted and not corrupted secrets
-func (dm *DataManager) GetAll(ctx context.Context, limit, offset int32) ([]*core.Record, error) {
-	return persistence.GetAllRecord(ctx, dm.db, limit, offset)
-}
-
-func (dm *DataManager) Create(ctx context.Context, request *RecordRequest, sync bool) (string, error) {
-	id, err := dm.createRecord(ctx, request)
-	if err != nil {
-		return "", err
-	}
-	if sync {
-		if err = dm.syncManager.Sync(ctx, &SyncOption{}); err != nil {
-			return "", err
-		}
-	}
-	return id, nil
-}
-
-func (dm *DataManager) Update(ctx context.Context, id string, request *RecordRequest, sync bool) (string, error) {
-	id, err := dm.updateRecord(ctx, id, request)
-	if err != nil {
-		return "", err
-	}
-	if sync {
-		if err = dm.syncManager.Sync(ctx, &SyncOption{}); err != nil {
-			return "", err
-		}
-	}
-	return id, nil
-}
-
-func (dm *DataManager) Delete(ctx context.Context, id string, sync bool) error {
-	if err := dm.deleteRecord(ctx, id); err != nil {
-		return err
-	}
-	if sync {
-		if err := dm.syncManager.Sync(ctx, &SyncOption{}); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// createRecord create secret
-func (dm *DataManager) createRecord(ctx context.Context, request *RecordRequest) (string, error) {
-	var record *core.Record
+func (dm *DataManager) CreateLoginPass(ctx context.Context, request *LoginPassRequest, sync bool) (string, error) {
 	var err error
+	var id string
+	id, err = dm.execInsert(ctx, func(ctx context.Context, tx *sql.Tx) (*core.Record, error) {
+		return dm.processLoginPass(
+			ctx,
+			core.CreateRecord(core.LoginPassType),
+			request,
+		)
+	})
+	if sync {
+		if err = dm.syncManager.Sync(ctx, &SyncOption{}); err != nil {
+			return "", err
+		}
+	}
+	return id, nil
+}
+
+func (dm *DataManager) UpdateLoginPass(ctx context.Context, id string, request *LoginPassRequest, sync bool) (string, error) {
+	var err error
+	id, err = dm.execUpdate(ctx, id, func(ctx context.Context, tx *sql.Tx, record *core.Record) (*core.Record, error) {
+		return dm.processLoginPass(
+			ctx,
+			record,
+			request,
+		)
+	})
+	if sync {
+		if err = dm.syncManager.Sync(ctx, &SyncOption{}); err != nil {
+			return "", err
+		}
+	}
+	return id, nil
+}
+
+func (dm *DataManager) CreateText(ctx context.Context, request *TextRequest, sync bool) (string, error) {
+	var err error
+	var id string
+	id, err = dm.execInsert(ctx, func(ctx context.Context, tx *sql.Tx) (*core.Record, error) {
+		return dm.processText(
+			ctx,
+			core.CreateRecord(core.TextType),
+			request,
+		)
+	})
+	if sync {
+		if err = dm.syncManager.Sync(ctx, &SyncOption{}); err != nil {
+			return "", err
+		}
+	}
+	return id, nil
+}
+
+func (dm *DataManager) UpdateText(ctx context.Context, id string, request *TextRequest, sync bool) (string, error) {
+	var err error
+	id, err = dm.execUpdate(ctx, id, func(ctx context.Context, tx *sql.Tx, record *core.Record) (*core.Record, error) {
+		return dm.processText(
+			ctx,
+			record,
+			request,
+		)
+	})
+	if sync {
+		if err = dm.syncManager.Sync(ctx, &SyncOption{}); err != nil {
+			return "", err
+		}
+	}
+	return id, nil
+}
+
+func (dm *DataManager) CreateBankCard(ctx context.Context, req *BankCardRequest, sync bool) (string, error) {
+	var err error
+	var id string
+	id, err = dm.execInsert(ctx, func(ctx context.Context, tx *sql.Tx) (*core.Record, error) {
+		return dm.processBankCard(
+			ctx,
+			core.CreateRecord(core.BankCardType),
+			req,
+		)
+	})
+	if sync {
+		if err = dm.syncManager.Sync(ctx, &SyncOption{}); err != nil {
+			return "", err
+		}
+	}
+	return id, nil
+}
+
+func (dm *DataManager) UpdateBankCard(ctx context.Context, id string, req *BankCardRequest, sync bool) (string, error) {
+	var err error
+	id, err = dm.execUpdate(ctx, id, func(ctx context.Context, tx *sql.Tx, record *core.Record) (*core.Record, error) {
+		return dm.processBankCard(
+			ctx,
+			record,
+			req,
+		)
+	})
+	if sync {
+		if err = dm.syncManager.Sync(ctx, &SyncOption{}); err != nil {
+			return "", err
+		}
+	}
+	return id, nil
+}
+
+func (dm *DataManager) CreateBinary(ctx context.Context, req *BinaryRequest, sync bool) (string, error) {
+	var err error
+	var id string
+	id, err = dm.execInsert(ctx, func(ctx context.Context, tx *sql.Tx) (*core.Record, error) {
+		return dm.processBinary(
+			ctx,
+			core.CreateRecord(core.BankCardType),
+			req,
+		)
+	})
+	if sync {
+		if err = dm.syncManager.Sync(ctx, &SyncOption{}); err != nil {
+			return "", err
+		}
+	}
+	return id, nil
+}
+
+func (dm *DataManager) UpdateBinary(ctx context.Context, id string, req *BinaryRequest, sync bool) (string, error) {
+	var err error
+	id, err = dm.execUpdate(ctx, id, func(ctx context.Context, tx *sql.Tx, record *core.Record) (*core.Record, error) {
+		return dm.processBinary(
+			ctx,
+			record,
+			req,
+		)
+	})
+	if sync {
+		if err = dm.syncManager.Sync(ctx, &SyncOption{}); err != nil {
+			return "", err
+		}
+	}
+	return id, nil
+}
+
+func (dm *DataManager) execInsert(ctx context.Context, op func(ctx context.Context, tx *sql.Tx) (*core.Record, error)) (string, error) {
+	var err error
+	var id string
 	tx, err := dm.db.Begin()
 	if err != nil {
 		return "", err
@@ -214,38 +324,10 @@ func (dm *DataManager) createRecord(ctx context.Context, request *RecordRequest)
 	if ex {
 		return "", ErrConflictExists
 	}
-	switch request.Type {
-	case core.LoginPassType:
-		record, err = dm.processLoginPass(
-			ctx,
-			core.CreateRecord(request.Type),
-			request,
-		)
-	case core.TextType:
-		record, err = dm.processText(
-			ctx,
-			core.CreateRecord(request.Type),
-			request,
-		)
-	case core.BankCardType:
-		record, err = dm.processBankCard(
-			ctx,
-			core.CreateRecord(request.Type),
-			request,
-		)
-	case core.OtherType:
-		record, err = dm.processBinary(
-			ctx,
-			core.CreateRecord(request.Type),
-			request,
-		)
-	default:
-		return "", errors.New("invalid data type")
-	}
+	record, err := op(ctx, tx)
 	if err != nil {
 		return "", err
 	}
-	var id string
 	id, err = dm.insert(ctx, tx, record)
 	if err != nil {
 		return "", err
@@ -253,10 +335,10 @@ func (dm *DataManager) createRecord(ctx context.Context, request *RecordRequest)
 	return id, nil
 }
 
-// updateRecord update secret
-func (dm *DataManager) updateRecord(ctx context.Context, id string, request *RecordRequest) (string, error) {
+func (dm *DataManager) execUpdate(ctx context.Context, id string, op func(ctx context.Context, tx *sql.Tx, record *core.Record) (*core.Record, error)) (string, error) {
 	var err error
-	tx, err := dm.db.BeginTx(ctx, nil)
+	var record *core.Record
+	tx, err := dm.db.Begin()
 	if err != nil {
 		return "", err
 	}
@@ -274,39 +356,12 @@ func (dm *DataManager) updateRecord(ctx context.Context, id string, request *Rec
 	if ex {
 		return "", ErrConflictExists
 	}
-	record, err := persistence.TxGetRecordByID(ctx, tx, id)
+	version := common.GetVersion(ctx)
+	record, err = persistence.TxGetRecordByID(ctx, tx, id)
 	if err != nil {
 		return "", err
 	}
-	version := common.GetVersion(ctx)
-	switch record.Type {
-	case core.LoginPassType:
-		record, err = dm.processLoginPass(
-			ctx,
-			record,
-			request,
-		)
-	case core.TextType:
-		record, err = dm.processText(
-			ctx,
-			record,
-			request,
-		)
-	case core.BankCardType:
-		record, err = dm.processBankCard(
-			ctx,
-			record,
-			request,
-		)
-	case core.OtherType:
-		record, err = dm.processBinary(
-			ctx,
-			record,
-			request,
-		)
-	default:
-		return "", errors.New("invalid data type")
-	}
+	record, err = op(ctx, tx, record)
 	if err != nil {
 		return "", err
 	}
@@ -317,6 +372,18 @@ func (dm *DataManager) updateRecord(ctx context.Context, id string, request *Rec
 		return "", err
 	}
 	return record.ID, nil
+}
+
+func (dm *DataManager) Delete(ctx context.Context, id string, sync bool) error {
+	if err := dm.deleteRecord(ctx, id); err != nil {
+		return err
+	}
+	if sync {
+		if err := dm.syncManager.Sync(ctx, &SyncOption{}); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // deleteRecord delete secret
@@ -358,7 +425,7 @@ func (dm *DataManager) deleteRecord(ctx context.Context, id string) error {
 	return nil
 }
 
-func (dm *DataManager) processLoginPass(ctx context.Context, record *core.Record, data *RecordRequest) (*core.Record, error) {
+func (dm *DataManager) processLoginPass(ctx context.Context, record *core.Record, data *LoginPassRequest) (*core.Record, error) {
 	masterKey, err := common.GetMasterKey(ctx)
 	if err != nil {
 		return nil, err
@@ -389,7 +456,7 @@ func (dm *DataManager) processLoginPass(ctx context.Context, record *core.Record
 	if err != nil {
 		return nil, err
 	}
-	dek, err := shared.GenerateDek(32)
+	dek, err := datatool.GenerateDek(32)
 	if err != nil {
 		return nil, err
 	}
@@ -407,7 +474,7 @@ func (dm *DataManager) processLoginPass(ctx context.Context, record *core.Record
 	return record, nil
 }
 
-func (dm *DataManager) processText(ctx context.Context, record *core.Record, data *RecordRequest) (*core.Record, error) {
+func (dm *DataManager) processText(ctx context.Context, record *core.Record, data *TextRequest) (*core.Record, error) {
 	version := common.GetVersion(ctx)
 	masterKey, err := common.GetMasterKey(ctx)
 	if err != nil {
@@ -432,7 +499,7 @@ func (dm *DataManager) processText(ctx context.Context, record *core.Record, dat
 	if err != nil {
 		return nil, err
 	}
-	dek, err := shared.GenerateDek(32)
+	dek, err := datatool.GenerateDek(32)
 	if err != nil {
 		return nil, err
 	}
@@ -450,7 +517,7 @@ func (dm *DataManager) processText(ctx context.Context, record *core.Record, dat
 	return record, nil
 }
 
-func (dm *DataManager) processBankCard(ctx context.Context, record *core.Record, data *RecordRequest) (*core.Record, error) {
+func (dm *DataManager) processBankCard(ctx context.Context, record *core.Record, data *BankCardRequest) (*core.Record, error) {
 	version := common.GetVersion(ctx)
 	masterKey, err := common.GetMasterKey(ctx)
 	if err != nil {
@@ -494,7 +561,7 @@ func (dm *DataManager) processBankCard(ctx context.Context, record *core.Record,
 	if err != nil {
 		return nil, err
 	}
-	dek, err := shared.GenerateDek(32)
+	dek, err := datatool.GenerateDek(32)
 	if err != nil {
 		return nil, err
 	}
@@ -512,20 +579,20 @@ func (dm *DataManager) processBankCard(ctx context.Context, record *core.Record,
 	return record, nil
 }
 
-func (dm *DataManager) processBinary(ctx context.Context, record *core.Record, data *RecordRequest) (*core.Record, error) {
+func (dm *DataManager) processBinary(ctx context.Context, record *core.Record, data *BinaryRequest) (*core.Record, error) {
 	version := common.GetVersion(ctx)
 	stat, err := os.Stat(data.Path)
 	if err != nil {
 		return nil, err
 	}
-	if stat.Size() > shared.MB*50 {
+	if stat.Size() > datatool.MB*50 {
 		return nil, ErrFileToBig
 	}
 	masterKey, err := common.GetMasterKey(ctx)
 	if err != nil {
 		return nil, err
 	}
-	record.BigData = stat.Size() > shared.MB
+	record.BigData = stat.Size() > datatool.MB
 	if record.BigData && record.Version > 0 {
 		err = dm.fp.Remove(record.ID, record.Version)
 		if err != nil {
@@ -548,7 +615,7 @@ func (dm *DataManager) processBinary(ctx context.Context, record *core.Record, d
 		SizeBytes: stat.Size(),
 		MIMEType:  mime.TypeByExtension(filepath.Ext(stat.Name())),
 	}
-	dek, err := shared.GenerateDek(32)
+	dek, err := datatool.GenerateDek(32)
 	if err != nil {
 		return nil, err
 	}

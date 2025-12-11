@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/DimKa163/keeper/internal/shared"
-
 	"github.com/beevik/guid"
 )
 
@@ -104,8 +102,4 @@ func (r *Record) DecodeBankCard(decoder Decoder, masterKey []byte) (*BankCard, e
 		return nil, err
 	}
 	return &card, nil
-}
-
-func (r *Record) Validate(fileProvider *shared.FileProvider) error {
-	return nil
 }

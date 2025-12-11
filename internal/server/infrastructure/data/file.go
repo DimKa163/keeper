@@ -4,14 +4,14 @@ package data
 import (
 	"io"
 
-	"github.com/DimKa163/keeper/internal/shared"
+	"github.com/DimKa163/keeper/internal/datatool"
 )
 
 type FileProvider struct {
-	fp *shared.FileProvider
+	fp *datatool.FileProvider
 }
 
-func NewFileProvider(fp *shared.FileProvider) *FileProvider {
+func NewFileProvider(fp *datatool.FileProvider) *FileProvider {
 	return &FileProvider{fp: fp}
 }
 

@@ -1,15 +1,20 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/DimKa163/keeper/internal/cli/app"
 	"github.com/DimKa163/keeper/internal/cli/common"
-	"github.com/DimKa163/keeper/internal/cli/core"
 	"github.com/spf13/cobra"
 )
 
-func BindCreateTextCommand(root *cobra.Command, userService *app.UserService, dataManager *app.DataManager) error {
+type TextManager interface {
+	CreateText(ctx context.Context, request *app.TextRequest, sync bool) (string, error)
+	UpdateText(ctx context.Context, id string, request *app.TextRequest, sync bool) (string, error)
+}
+
+func BindCreateTextCommand(root *cobra.Command, userService *app.UserService, dataManager TextManager) error {
 	var key string
 	var name string
 	var content string
@@ -24,9 +29,9 @@ func BindCreateTextCommand(root *cobra.Command, userService *app.UserService, da
 				return err
 			}
 			ctx = common.SetMasterKey(ctx, masterKey)
-			id, err := dataManager.Create(
+			id, err := dataManager.CreateText(
 				ctx,
-				&app.RecordRequest{Type: core.TextType, Name: name, Content: content},
+				&app.TextRequest{Name: name, Content: content},
 				needSync,
 			)
 			if err != nil {
@@ -47,7 +52,7 @@ func BindCreateTextCommand(root *cobra.Command, userService *app.UserService, da
 	return nil
 }
 
-func BindUpdateTextCommand(root *cobra.Command, userService *app.UserService, dataManager *app.DataManager) error {
+func BindUpdateTextCommand(root *cobra.Command, userService *app.UserService, dataManager TextManager) error {
 	var key string
 	var id string
 	var name string
@@ -63,10 +68,10 @@ func BindUpdateTextCommand(root *cobra.Command, userService *app.UserService, da
 				return err
 			}
 			ctx = common.SetMasterKey(ctx, masterKey)
-			id, err = dataManager.Update(
+			id, err = dataManager.UpdateText(
 				ctx,
 				id,
-				&app.RecordRequest{Type: core.TextType, Name: name, Content: content},
+				&app.TextRequest{Name: name, Content: content},
 				needSync,
 			)
 			if err != nil {

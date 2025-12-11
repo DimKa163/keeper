@@ -1,15 +1,20 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/DimKa163/keeper/internal/cli/app"
 	"github.com/DimKa163/keeper/internal/cli/common"
-	"github.com/DimKa163/keeper/internal/cli/core"
 	"github.com/spf13/cobra"
 )
 
-func BindCreateBankCard(root *cobra.Command, userService *app.UserService, dataManager *app.DataManager) error {
+type BankCardManager interface {
+	CreateBankCard(ctx context.Context, req *app.BankCardRequest, sync bool) (string, error)
+	UpdateBankCard(ctx context.Context, id string, req *app.BankCardRequest, sync bool) (string, error)
+}
+
+func BindCreateBankCard(root *cobra.Command, userService *app.UserService, dataManager BankCardManager) error {
 	var key string
 	var name string
 	var cardNumber string
@@ -31,8 +36,7 @@ func BindCreateBankCard(root *cobra.Command, userService *app.UserService, dataM
 				return err
 			}
 			ctx = common.SetMasterKey(ctx, masterKey)
-			id, err := dataManager.Create(ctx, &app.RecordRequest{
-				Type:       core.BankCardType,
+			id, err := dataManager.CreateBankCard(ctx, &app.BankCardRequest{
 				Name:       name,
 				CardNumber: cardNumber,
 				Expiry:     expiry,
@@ -73,7 +77,7 @@ func BindCreateBankCard(root *cobra.Command, userService *app.UserService, dataM
 	return nil
 }
 
-func BindUpdateBankCard(root *cobra.Command, userService *app.UserService, dataManager *app.DataManager) error {
+func BindUpdateBankCard(root *cobra.Command, userService *app.UserService, dataManager BankCardManager) error {
 	var key string
 	var id string
 	var name string
@@ -96,8 +100,7 @@ func BindUpdateBankCard(root *cobra.Command, userService *app.UserService, dataM
 				return err
 			}
 			ctx = common.SetMasterKey(ctx, masterKey)
-			id, err = dataManager.Update(ctx, id, &app.RecordRequest{
-				Type:       core.BankCardType,
+			id, err = dataManager.UpdateBankCard(ctx, id, &app.BankCardRequest{
 				Name:       name,
 				CardNumber: cardNumber,
 				Expiry:     expiry,

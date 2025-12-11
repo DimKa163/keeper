@@ -1,4 +1,4 @@
-package shared
+package datatool
 
 import "crypto/rand"
 

@@ -13,8 +13,8 @@ import (
 	"github.com/DimKa163/keeper/internal/cli/core"
 	"github.com/DimKa163/keeper/internal/cli/persistence"
 	"github.com/DimKa163/keeper/internal/common"
+	"github.com/DimKa163/keeper/internal/datatool"
 	"github.com/DimKa163/keeper/internal/pb"
-	"github.com/DimKa163/keeper/internal/shared"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -39,13 +39,13 @@ type PushSecretStream grpc.ClientStreamingClient[pb.PushOperation, pb.PushRespon
 type SyncService struct {
 	client       *RemoteClient
 	db           *sql.DB
-	fileProvider *shared.FileProvider
+	fileProvider *datatool.FileProvider
 }
 
 func NewSyncService(
 	client *RemoteClient,
 	db *sql.DB,
-	fileProvider *shared.FileProvider,
+	fileProvider *datatool.FileProvider,
 ) *SyncService {
 	return &SyncService{
 		client:       client,
@@ -151,7 +151,7 @@ func (ss *SyncService) pushFile(stream PushSecretStream, record *core.Record) er
 			fmt.Printf("failed to close file: %s\n", err)
 		}
 	}(reader)
-	buffer := make([]byte, shared.MB)
+	buffer := make([]byte, datatool.MB)
 	for {
 		n, err = reader.Read(buffer)
 		if err != nil {

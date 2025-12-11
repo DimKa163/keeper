@@ -1,17 +1,11 @@
-package shared
+package datatool
 
 import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
-)
-
-type FileMode uint32
-
-const (
-	Read FileMode = iota
-	Write
 )
 
 type FileProvider struct {
@@ -47,7 +41,7 @@ func (fp *FileProvider) Rename(fileName string, old, new int32) error {
 
 func buildPath(root, name string, version int32, dst ...string) string {
 	if dst == nil {
-		return fmt.Sprintf("%s\\%s_%d", root, name, version)
+		return filepath.Join(root, fmt.Sprintf("%s_%d", name, version))
 	}
 	var sb strings.Builder
 	for _, d := range dst {
@@ -56,5 +50,5 @@ func buildPath(root, name string, version int32, dst ...string) string {
 		}
 		sb.WriteString(d)
 	}
-	return fmt.Sprintf("%s\\%s_%d_%s", root, name, version, sb.String())
+	return filepath.Join(root, fmt.Sprintf("%s_%d_%s", name, version, sb.String()))
 }

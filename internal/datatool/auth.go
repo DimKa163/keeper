@@ -1,5 +1,5 @@
-// Package shared common tools
-package shared
+// Package datatool common tools
+package datatool
 
 import (
 	"crypto/rand"

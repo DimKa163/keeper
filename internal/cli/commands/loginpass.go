@@ -1,15 +1,21 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/DimKa163/keeper/internal/cli/app"
 	"github.com/DimKa163/keeper/internal/cli/common"
-	"github.com/DimKa163/keeper/internal/cli/core"
 	"github.com/spf13/cobra"
 )
 
-func BindCreateLoginPassCommand(root *cobra.Command, userService *app.UserService, dataManager *app.DataManager) error {
+type LoginPassManager interface {
+	CreateLoginPass(ctx context.Context, req *app.LoginPassRequest, sync bool) (string, error)
+
+	UpdateLoginPass(ctx context.Context, id string, req *app.LoginPassRequest, sync bool) (string, error)
+}
+
+func BindCreateLoginPassCommand(root *cobra.Command, userService *app.UserService, dataManager LoginPassManager) error {
 	var key string
 	var name string
 	var login string
@@ -26,9 +32,9 @@ func BindCreateLoginPassCommand(root *cobra.Command, userService *app.UserServic
 				return err
 			}
 			ctx = common.SetMasterKey(ctx, masterKey)
-			id, err := dataManager.Create(
+			id, err := dataManager.CreateLoginPass(
 				ctx,
-				&app.RecordRequest{Type: core.LoginPassType, Name: name, Login: login, Pass: pass, URL: url},
+				&app.LoginPassRequest{Name: name, Login: login, Pass: pass, URL: url},
 				needSync,
 			)
 			if err != nil {
@@ -54,7 +60,7 @@ func BindCreateLoginPassCommand(root *cobra.Command, userService *app.UserServic
 	return nil
 }
 
-func BindUpdateLoginPassCommand(root *cobra.Command, userService *app.UserService, dataManager *app.DataManager) error {
+func BindUpdateLoginPassCommand(root *cobra.Command, userService *app.UserService, dataManager LoginPassManager) error {
 	var key string
 	var id string
 	var name string
@@ -72,10 +78,10 @@ func BindUpdateLoginPassCommand(root *cobra.Command, userService *app.UserServic
 				return err
 			}
 			ctx = common.SetMasterKey(ctx, masterKey)
-			id, err = dataManager.Update(
+			id, err = dataManager.UpdateLoginPass(
 				ctx,
 				id,
-				&app.RecordRequest{Type: core.LoginPassType, Name: name, Login: login, Pass: pass, URL: url},
+				&app.LoginPassRequest{Name: name, Login: login, Pass: pass, URL: url},
 				needSync,
 			)
 			if err != nil {

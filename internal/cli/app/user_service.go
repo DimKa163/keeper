@@ -9,7 +9,7 @@ import (
 
 	"github.com/DimKa163/keeper/internal/cli/core"
 	"github.com/DimKa163/keeper/internal/cli/persistence"
-	shared "github.com/DimKa163/keeper/internal/shared"
+	shared "github.com/DimKa163/keeper/internal/datatool"
 	"github.com/beevik/guid"
 )
 

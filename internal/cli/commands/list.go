@@ -1,14 +1,24 @@
 package commands
 
 import (
+	"context"
 	"fmt"
+	"github.com/DimKa163/keeper/internal/cli/core"
 
 	"github.com/DimKa163/keeper/internal/cli/app"
 	"github.com/DimKa163/keeper/internal/cli/common"
 	"github.com/spf13/cobra"
 )
 
-func BindListCommand(root *cobra.Command, userService *app.UserService, dataManager *app.DataManager) error {
+type RecordReader interface {
+	Get(ctx context.Context, id string) (*core.Record, error)
+
+	GetAll(ctx context.Context, limit, offset int32) ([]*core.Record, error)
+
+	Decode(ctx context.Context, record *core.Record) ([]byte, error)
+}
+
+func BindListCommand(root *cobra.Command, userService *app.UserService, dataManager RecordReader) error {
 	var key string
 	var limit int32
 	var offset int32
@@ -17,11 +27,11 @@ func BindListCommand(root *cobra.Command, userService *app.UserService, dataMana
 		Short: "list all dataManager",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
-			key, err := userService.Auth(ctx, key)
+			masterKey, err := userService.Auth(ctx, key)
 			if err != nil {
 				return err
 			}
-			ctx = common.SetMasterKey(ctx, key)
+			ctx = common.SetMasterKey(ctx, masterKey)
 			records, err := dataManager.GetAll(ctx, limit, offset)
 			if err != nil {
 				return err

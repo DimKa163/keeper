@@ -2,16 +2,26 @@
 package commands
 
 import (
+	"context"
 	"fmt"
+	"github.com/DimKa163/keeper/internal/cli/core"
+	"io"
 	"os"
 
 	"github.com/DimKa163/keeper/internal/cli/app"
 	"github.com/DimKa163/keeper/internal/cli/common"
-	"github.com/DimKa163/keeper/internal/cli/core"
 	"github.com/spf13/cobra"
 )
 
-func BindCreateBinary(root *cobra.Command, userService *app.UserService, dataManager *app.DataManager) error {
+type BinaryManager interface {
+	RecordReader
+	CreateBinary(ctx context.Context, req *app.BinaryRequest, sync bool) (string, error)
+	UpdateBinary(ctx context.Context, id string, req *app.BinaryRequest, sync bool) (string, error)
+
+	ExtractFile(ctx context.Context, record *core.Record) (*core.Binary, io.ReadCloser, error)
+}
+
+func BindCreateBinary(root *cobra.Command, userService *app.UserService, dataManager BinaryManager) error {
 	var key string
 	var path string
 	var needSync bool
@@ -25,9 +35,9 @@ func BindCreateBinary(root *cobra.Command, userService *app.UserService, dataMan
 				return err
 			}
 			ctx = common.SetMasterKey(ctx, key)
-			id, err := dataManager.Create(
+			id, err := dataManager.CreateBinary(
 				ctx,
-				&app.RecordRequest{Type: core.OtherType, Path: path},
+				&app.BinaryRequest{Path: path},
 				needSync,
 			)
 			if err != nil {
@@ -51,27 +61,7 @@ func BindCreateBinary(root *cobra.Command, userService *app.UserService, dataMan
 	root.AddCommand(cmd)
 	return nil
 }
-
-type UpdateBinaryFileCommandBuilder struct {
-	userService *app.UserService
-	dataManager *app.DataManager
-	id          string
-	key         string
-	path        string
-	needSync    bool
-}
-
-func NewUpdateBinaryFileCommandBuilder(
-	userService *app.UserService,
-	dataManager *app.DataManager,
-) *UpdateBinaryFileCommandBuilder {
-	return &UpdateBinaryFileCommandBuilder{
-		userService: userService,
-		dataManager: dataManager,
-	}
-}
-
-func BindUpdateBinary(root *cobra.Command, userService *app.UserService, dataManager *app.DataManager) error {
+func BindUpdateBinary(root *cobra.Command, userService *app.UserService, dataManager BinaryManager) error {
 	var key string
 	var id string
 	var path string
@@ -86,10 +76,10 @@ func BindUpdateBinary(root *cobra.Command, userService *app.UserService, dataMan
 				return err
 			}
 			ctx = common.SetMasterKey(ctx, masterKey)
-			id, err = dataManager.Update(
+			id, err = dataManager.UpdateBinary(
 				ctx,
 				id,
-				&app.RecordRequest{Type: core.OtherType, Path: path},
+				&app.BinaryRequest{Path: path},
 				needSync,
 			)
 			if err != nil {
@@ -116,22 +106,7 @@ func BindUpdateBinary(root *cobra.Command, userService *app.UserService, dataMan
 	return nil
 }
 
-type ReadBinaryFileCommandBuilder struct {
-	userService *app.UserService
-	dataManager *app.DataManager
-	id          string
-	key         string
-	path        string
-}
-
-func NewReadBinaryFileCommandBuilder(users *app.UserService, data *app.DataManager) *ReadBinaryFileCommandBuilder {
-	return &ReadBinaryFileCommandBuilder{
-		userService: users,
-		dataManager: data,
-	}
-}
-
-func BindExportBinaryCommand(root *cobra.Command, userService *app.UserService, dataManager *app.DataManager) error {
+func BindExportBinaryCommand(root *cobra.Command, userService *app.UserService, dataManager BinaryManager) error {
 	var id string
 	var key string
 	var path string

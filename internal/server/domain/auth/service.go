@@ -4,7 +4,7 @@ import (
 	"crypto/rand"
 	"errors"
 
-	shared "github.com/DimKa163/keeper/internal/shared"
+	shared "github.com/DimKa163/keeper/internal/datatool"
 )
 
 var ErrInvalidPassword = errors.New("invalid password")

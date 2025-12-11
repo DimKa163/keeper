@@ -8,8 +8,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/DimKa163/keeper/internal/datatool"
 	"github.com/DimKa163/keeper/internal/server/infrastructure/data"
-	"github.com/DimKa163/keeper/internal/shared"
 
 	"github.com/DimKa163/keeper/internal/server/interfaces"
 
@@ -75,7 +75,7 @@ func (server *Server) AddServices() error {
 	server.AuthService = addAuthService(server.Config)
 	server.UserService = addUserService(server.UnitOfWork, server.AuthService, server.AuthEngine)
 	server.UserRPCServer = interfaces.NewUserServer(server.UserService)
-	server.SyncService = usecase.NewSyncService(server.UnitOfWork, data.NewFileProvider(shared.NewFileProvider(server.FilePath)))
+	server.SyncService = usecase.NewSyncService(server.UnitOfWork, data.NewFileProvider(datatool.NewFileProvider(server.FilePath)))
 	server.SyncRPCServer = interfaces.NewSyncServer(server.SyncService)
 	return nil
 }

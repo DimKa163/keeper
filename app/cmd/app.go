@@ -16,7 +16,7 @@ import (
 	"github.com/DimKa163/keeper/internal/cli/core"
 	"github.com/DimKa163/keeper/internal/cli/crypto"
 	"github.com/DimKa163/keeper/internal/cli/persistence"
-	"github.com/DimKa163/keeper/internal/shared"
+	"github.com/DimKa163/keeper/internal/datatool"
 	"github.com/spf13/cobra"
 	_ "modernc.org/sqlite"
 )
@@ -51,7 +51,7 @@ func New(version, commit, date string) (*CMD, error) {
 	if err = persistence.Migrate(db); err != nil {
 		return nil, err
 	}
-	fileProvider := shared.NewFileProvider(fmt.Sprintf("%s\\", dir))
+	fileProvider := datatool.NewFileProvider(fmt.Sprintf("%s\\", dir))
 	syncService, err := createSyncService(db, fileProvider)
 	if err != nil && errors.Is(err, app.ErrServerUnavailable) {
 		fmt.Println("remote server unavailable")
@@ -173,7 +173,7 @@ func (cmd *CMD) Execute() error {
 	return cmd.root.ExecuteContext(ctx)
 }
 
-func createSyncService(db *sql.DB, fp *shared.FileProvider) (app.Syncer, error) {
+func createSyncService(db *sql.DB, fp *datatool.FileProvider) (app.Syncer, error) {
 	serv, err := persistence.GetServer(context.Background(), db, true)
 	if err != nil {
 		if !errors.Is(err, sql.ErrNoRows) {

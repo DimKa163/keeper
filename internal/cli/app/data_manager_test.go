@@ -9,10 +9,9 @@ import (
 	"testing"
 
 	"github.com/DimKa163/keeper/internal/cli/common"
-	"github.com/DimKa163/keeper/internal/cli/core"
 	"github.com/DimKa163/keeper/internal/cli/crypto"
 	"github.com/DimKa163/keeper/internal/cli/persistence"
-	"github.com/DimKa163/keeper/internal/shared"
+	"github.com/DimKa163/keeper/internal/datatool"
 	"github.com/stretchr/testify/assert"
 	_ "modernc.org/sqlite"
 )
@@ -20,10 +19,10 @@ import (
 func TestCreateLoginPassShouldBeSuccess(t *testing.T) {
 	ctx, manager, cleanUp := configure(t)
 
-	request := &RecordRequest{
-		Type: core.LoginPassType, Name: "Test", Login: "Login", Pass: "Pass", URL: "http:",
+	request := &LoginPassRequest{
+		Name: "Test", Login: "Login", Pass: "Pass", URL: "http:",
 	}
-	id, err := manager.Create(ctx, request, false)
+	id, err := manager.CreateLoginPass(ctx, request, false)
 
 	assert.NoError(t, err)
 	assert.NotEmpty(t, id)
@@ -61,10 +60,10 @@ func TestUpdateLoginPassShouldBeSuccess(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	request := &RecordRequest{
-		Type: core.LoginPassType, Name: "NoTest", Login: "NoLogin", Pass: "NoPass", URL: "http:",
+	request := &LoginPassRequest{
+		Name: "NoTest", Login: "NoLogin", Pass: "NoPass", URL: "http:",
 	}
-	id, err = manager.Update(ctx, id, request, false)
+	id, err = manager.UpdateLoginPass(ctx, id, request, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -99,10 +98,10 @@ func TestUpdateLoginPassShouldBeSuccess(t *testing.T) {
 func TestCreateTextContentShouldBeSuccess(t *testing.T) {
 	ctx, manager, cleanUp := configure(t)
 
-	request := &RecordRequest{
-		Type: core.TextType, Name: "test text content", Content: "yep, its content",
+	request := &TextRequest{
+		Name: "test text content", Content: "yep, its content",
 	}
-	id, err := manager.Create(ctx, request, false)
+	id, err := manager.CreateText(ctx, request, false)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, id)
 
@@ -137,10 +136,10 @@ func TestUpdateTextContentShouldBeSuccess(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	request := &RecordRequest{
-		Type: core.TextType, Name: "test text content, updated", Content: "yep, its content",
+	request := &TextRequest{
+		Name: "test text content, updated", Content: "yep, its content",
 	}
-	id, err = manager.Update(ctx, id, request, false)
+	id, err = manager.UpdateText(ctx, id, request, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -174,8 +173,7 @@ func TestUpdateTextContentShouldBeSuccess(t *testing.T) {
 func TestCreateBankCardShouldBeSuccess(t *testing.T) {
 	ctx, manager, cleanUp := configure(t)
 
-	request := &RecordRequest{
-		Type:       core.BankCardType,
+	request := &BankCardRequest{
 		Name:       "test bank card",
 		CardNumber: "4001 4547 4778 9852",
 		Expiry:     "30/01",
@@ -186,7 +184,7 @@ func TestCreateBankCardShouldBeSuccess(t *testing.T) {
 		Currency:   "USD",
 		IsPrimary:  true,
 	}
-	id, err := manager.Create(ctx, request, false)
+	id, err := manager.CreateBankCard(ctx, request, false)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, id)
 
@@ -229,8 +227,7 @@ func TestUpdateBankCardShouldBeSuccess(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	request := &RecordRequest{
-		Type:       core.BankCardType,
+	request := &BankCardRequest{
 		Name:       "test bank card",
 		CardNumber: "4001 4547 4778 9852",
 		Expiry:     "30/01",
@@ -241,7 +238,7 @@ func TestUpdateBankCardShouldBeSuccess(t *testing.T) {
 		Currency:   "USD",
 		IsPrimary:  false,
 	}
-	id, err = manager.Update(ctx, id, request, false)
+	id, err = manager.UpdateBankCard(ctx, id, request, false)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, id)
 
@@ -283,7 +280,7 @@ func TestCreateBigBinaryShouldBeSuccess(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	content := make([]byte, shared.MB*5)
+	content := make([]byte, datatool.MB*5)
 	_, err = rand.Read(content)
 	if err != nil {
 		t.Fatal(err)
@@ -297,11 +294,10 @@ func TestCreateBigBinaryShouldBeSuccess(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	request := &RecordRequest{
-		Type: core.OtherType,
+	request := &BinaryRequest{
 		Path: filePath,
 	}
-	id, err := manager.Create(ctx, request, false)
+	id, err := manager.CreateBinary(ctx, request, false)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, id)
 
@@ -325,7 +321,7 @@ func TestCreateNotBigBinaryShouldBeSuccess(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	content := make([]byte, shared.MB-2)
+	content := make([]byte, datatool.MB-2)
 	_, err = rand.Read(content)
 	if err != nil {
 		t.Fatal(err)
@@ -339,11 +335,10 @@ func TestCreateNotBigBinaryShouldBeSuccess(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	request := &RecordRequest{
-		Type: core.OtherType,
+	request := &BinaryRequest{
 		Path: filePath,
 	}
-	id, err := manager.Create(ctx, request, false)
+	id, err := manager.CreateBinary(ctx, request, false)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, id)
 
@@ -373,7 +368,7 @@ func TestUpdateBinaryShouldBeSuccess(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	content := make([]byte, shared.MB*7)
+	content := make([]byte, datatool.MB*7)
 	_, err = rand.Read(content)
 	if err != nil {
 		t.Fatal(err)
@@ -387,11 +382,10 @@ func TestUpdateBinaryShouldBeSuccess(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	request := &RecordRequest{
-		Type: core.OtherType,
+	request := &BinaryRequest{
 		Path: filePath,
 	}
-	id, err = manager.Update(ctx, id, request, false)
+	id, err = manager.UpdateBinary(ctx, id, request, false)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, id)
 
@@ -426,7 +420,7 @@ func configure(t *testing.T) (context.Context, *DataManager, func() error) {
 	}
 	path := "./test"
 
-	fileProvider := shared.NewFileProvider(path)
+	fileProvider := datatool.NewFileProvider(path)
 
 	db, err := sql.Open("sqlite", "file:memdb1?mode=memory&cache=shared")
 	if err != nil {
@@ -440,22 +434,21 @@ func configure(t *testing.T) (context.Context, *DataManager, func() error) {
 	}
 }
 func createLoginPass(ctx context.Context, dataService *DataManager) (string, error) {
-	request := &RecordRequest{
-		Type: core.LoginPassType, Name: "Test", Login: "Login", Pass: "Pass", URL: "http:",
+	request := &LoginPassRequest{
+		Name: "Test", Login: "Login", Pass: "Pass", URL: "http:",
 	}
-	return dataService.createRecord(ctx, request)
+	return dataService.CreateLoginPass(ctx, request, false)
 }
 
 func createTextContent(ctx context.Context, dataService *DataManager) (string, error) {
-	request := &RecordRequest{
-		Type: core.TextType, Name: "test text content", Content: "yep, its content",
+	request := &TextRequest{
+		Name: "test text content", Content: "yep, its content",
 	}
-	return dataService.createRecord(ctx, request)
+	return dataService.CreateText(ctx, request, false)
 }
 
 func createBankCard(ctx context.Context, dataService *DataManager) (string, error) {
-	request := &RecordRequest{
-		Type:       core.BankCardType,
+	request := &BankCardRequest{
 		Name:       "test bank card",
 		CardNumber: "4001 4547 4778 9852",
 		Expiry:     "30/01",
@@ -466,7 +459,7 @@ func createBankCard(ctx context.Context, dataService *DataManager) (string, erro
 		Currency:   "USD",
 		IsPrimary:  true,
 	}
-	return dataService.createRecord(ctx, request)
+	return dataService.CreateBankCard(ctx, request, false)
 }
 
 func createBinaryFile(ctx context.Context, filePath string, dataService *DataManager) (string, error) {
@@ -474,7 +467,7 @@ func createBinaryFile(ctx context.Context, filePath string, dataService *DataMan
 	if err != nil {
 		return "", err
 	}
-	content := make([]byte, shared.MB*5)
+	content := make([]byte, datatool.MB*5)
 	_, err = rand.Read(content)
 	if err != nil {
 		return "", err
@@ -487,11 +480,10 @@ func createBinaryFile(ctx context.Context, filePath string, dataService *DataMan
 	if err != nil {
 		return "", err
 	}
-	request := &RecordRequest{
-		Type: core.OtherType,
+	request := &BinaryRequest{
 		Path: filePath,
 	}
-	return dataService.createRecord(ctx, request)
+	return dataService.CreateBinary(ctx, request, false)
 }
 
 type mockSyncer struct {

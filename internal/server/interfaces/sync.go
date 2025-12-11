@@ -7,11 +7,11 @@ import (
 	"io"
 
 	"github.com/DimKa163/keeper/internal/common"
+	"github.com/DimKa163/keeper/internal/datatool"
 	"github.com/DimKa163/keeper/internal/pb"
 	"github.com/DimKa163/keeper/internal/server/domain"
 	"github.com/DimKa163/keeper/internal/server/shared/logging"
 	"github.com/DimKa163/keeper/internal/server/usecase"
-	"github.com/DimKa163/keeper/internal/shared"
 	"github.com/beevik/guid"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -122,7 +122,7 @@ func (ss *SyncServer) PullStream(in *pb.PullStreamRequest, stream pb.Sync_PullSt
 			logger.Warn("failed to close file", zap.Error(err))
 		}
 	}(reader)
-	buffer := make([]byte, shared.MB)
+	buffer := make([]byte, datatool.MB)
 	for {
 		var n int
 		n, err = reader.Read(buffer)
@@ -172,62 +172,12 @@ func toDefault(op *pb.PushOperation) (*usecase.Push, error) {
 	return &push, nil
 }
 
-//func toPullDefault(data *domain.Secret) *pb.PullOperation {
-//	var op pb.PullOperation
-//	var secret pb.Secret
-//	secret.SetId(data.ID.String())
-//	secret.SetModifiedAt(timestamppb.New(data.ModifiedAt))
-//	secret.SetDek(data.Dek)
-//	secret.SetData(data.Payload)
-//	secret.SetDeleted(data.Deleted)
-//	secret.SetIsBig(data.BigData)
-//	secret.SetVersion(data.Version)
-//	switch data.Type {
-//	case domain.LoginPassType:
-//		secret.SetType(pb.SecretType1_LoginPass)
-//	case domain.TextType:
-//		secret.SetType(pb.SecretType1_Text)
-//	case domain.BankCardType:
-//		secret.SetType(pb.SecretType1_BankCard)
-//	case domain.OtherType:
-//		secret.SetType(pb.SecretType1_Binary)
-//	}
-//	op.SetSecret(&secret)
-//	op.SetType(pb.PullOperation_Default)
-//	return &op
-//}
-
-//func toPullBeginFile(data *domain.Secret) *pb.PullOperation {
-//	var op pb.PullOperation
-//	var secret pb.Secret
-//	secret.SetId(data.ID.String())
-//	secret.SetModifiedAt(timestamppb.New(data.ModifiedAt))
-//	secret.SetVersion(data.Version)
-//	op.SetSecret(&secret)
-//	op.SetType(pb.PullOperation_Default)
-//	return &op
-//}
-
 func toPullChunkFile(id string, buffer []byte, n int) *pb.Chunk {
 	var chunk pb.Chunk
 	chunk.SetId(id)
 	chunk.SetType(pb.ChunkType_FilePart)
 	chunk.SetBuffer(buffer[:n])
 	return &chunk
-}
-
-func toEndPullFile(id string) *pb.Chunk {
-	var op pb.Chunk
-	op.SetType(pb.ChunkType_EndData)
-	op.SetId(id)
-	return &op
-}
-
-func toEndPullStream(id string, version int32) *pb.Chunk {
-	var op pb.Chunk
-	op.SetType(pb.ChunkType_EndData)
-	op.SetId(id)
-	return &op
 }
 
 func toBeginFile(op *pb.PushOperation) (*usecase.Push, error) {
